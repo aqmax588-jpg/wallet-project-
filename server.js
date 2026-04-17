@@ -1,82 +1,163 @@
 const express = require('express');
 const cors = require('cors');
-const sqlite3 = require('sqlite3').verbose();
+const bodyParser = require('body-parser');
+const fs = require('fs');
 const path = require('path');
 
 const app = express();
-const PORT = process.env.PORT || 10000;
-
 app.use(cors());
-app.use(express.json());
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(bodyParser.json());
+app.use(express.static('public'));
 
-const db = new sqlite3.Database('./users.db', (err) => {
-  if (err) console.error('DB error:', err.message);
-  else console.log('✅ Database connected');
+const DB_FILE = path.join(__dirname, 'db.json');
+
+if (!fs.existsSync(DB_FILE)) {
+  fs.writeFileSync(DB_FILE, JSON.stringify([], null, 2));
+}
+
+function readDB() {
+  return JSON.parse(fs.readFileSync(DB_FILE, 'utf8'));
+}
+function writeDB(data) {
+  fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2));
+}
+function now() {
+  return new Date().toISOString();
+}
+
+// 生成随机 token
+function genToken() {
+  return Math.random().toString(36).slice(2) + Date.now().toString(36);
+}
+
+// ------------------------------
+// 用户登录（带过期、禁用、互踢）
+// ------------------------------
+app.post('/api/login', (req, res) => {
+  const { username, password } = req.body;
+  const db = readDB();
+
+  const user = db.find(u => u.username === username);
+  if (!user) return res.json({ ok: false, msg: '账号不存在' });
+
+  // 密码错误
+  if (user.password !== password) {
+    return res.json({ ok: false, msg: '密码错误' });
+  }
+
+  // 被禁用
+  if (!user.enabled) {
+    return res.json({ ok: false, msg: '账号已禁用' });
+  }
+
+  // 已到期
+  const nowTs = Date.now();
+  if (user.expireAt) {
+    const expTs = new Date(user.expireAt).getTime();
+    if (nowTs > expTs) {
+      return res.json({ ok: false, msg: '账号已过期' });
+    }
+  }
+
+  // 生成新 token，实现互踢
+  const token = genToken();
+  user.token = token;
+  writeDB(db);
+
+  res.json({ ok: true, token });
 });
 
-db.run(`CREATE TABLE IF NOT EXISTS users (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  username TEXT UNIQUE NOT NULL,
-  password TEXT NOT NULL,
-  expire TEXT NOT NULL,
-  banned INTEGER DEFAULT 0
-)`);
+// ------------------------------
+// 前端每次刷新校验 token
+// ------------------------------
+app.post('/api/check', (req, res) => {
+  const { username, token } = req.body;
+  const db = readDB();
+  const user = db.find(u => u.username === username);
 
-db.get('SELECT * FROM users WHERE username = ?', ['admin'], (err, row) => {
-  if (!row) {
-    db.run(`INSERT INTO users (username,password,expire,banned) VALUES ('admin','admin888','2027-12-31',0)`);
-    db.run(`INSERT INTO users (username,password,expire,banned) VALUES ('test','test123','2027-12-31',0)`);
+  if (!user || !user.enabled || !user.token || user.token !== token) {
+    return res.json({ ok: false });
+  }
+
+  // 到期检查
+  if (user.expireAt && Date.now() > new Date(user.expireAt).getTime()) {
+    return res.json({ ok: false });
+  }
+
+  res.json({ ok: true });
+});
+
+// ------------------------------
+// 管理员
+// ------------------------------
+app.post('/api/admin/login', (req, res) => {
+  const { user, pwd } = req.body;
+  if (user === 'admin' && pwd === 'admin123') {
+    res.json({ ok: true });
+  } else {
+    res.json({ ok: false });
   }
 });
 
-app.post('/api/login', (req, res) => {
-  const { username, password } = req.body;
-  db.get('SELECT * FROM users WHERE username = ?', [username], (err, user) => {
-    if (!user) return res.json({ ok: false, msg: 'User not found' });
-    if (user.banned) return res.json({ ok: false, msg: 'Account disabled' });
-    if (new Date() > new Date(user.expire)) return res.json({ ok: false, msg: 'Account expired' });
-    if (user.password !== password) return res.json({ ok: false, msg: 'Wrong password' });
-    res.json({ ok: true });
-  });
-});
-
-app.get('/api/admin/users', (req, res) => {
-  db.all('SELECT * FROM users', (err, rows) => res.json(rows));
-});
-
-app.post('/api/admin/update', (req, res) => {
-  const { id, username, password, expire } = req.body;
-  db.run('UPDATE users SET username=?, password=?, expire=? WHERE id=?',
-    [username, password, expire, id], () => res.json({ ok: true }));
-});
-
-app.post('/api/admin/toggle', (req, res) => {
-  const { id } = req.body;
-  db.get('SELECT banned FROM users WHERE id=?', [id], (err, row) => {
-    db.run('UPDATE users SET banned=? WHERE id=?', [!row.banned, id], () => res.json({ ok: true }));
-  });
+app.get('/api/admin/list', (req, res) => {
+  res.json(readDB());
 });
 
 app.post('/api/admin/delete', (req, res) => {
-  const { id } = req.body;
-  db.run('DELETE FROM users WHERE id=?', [id], () => res.json({ ok: true }));
+  const { username } = req.body;
+  let db = readDB();
+  db = db.filter(x => x.username !== username);
+  writeDB(db);
+  res.json({ ok: true });
 });
 
-app.post('/api/admin/add', (req, res) => {
-  const { username, password, expire } = req.body;
-  db.run('INSERT INTO users (username,password,expire) VALUES (?,?,?)',
-    [username, password, expire], () => res.json({ ok: true }));
+app.post('/api/admin/toggle', (req, res) => {
+  const { username, enabled } = req.body;
+  const db = readDB();
+  const u = db.find(x => x.username === username);
+  if (u) {
+    u.enabled = enabled;
+    if (!enabled) u.token = null; // 禁用时强制踢下线
+  }
+  writeDB(db);
+  res.json({ ok: true });
 });
 
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public/index.html'));
+app.post('/api/admin/batch', (req, res) => {
+  const { lines, days } = req.body;
+  const db = readDB();
+  const arr = lines.split(/\n/).map(x => x.trim()).filter(Boolean);
+
+  let success = 0;
+  let exist = 0;
+
+  for (const line of arr) {
+    const [user, pwd] = line.split(/\s+/).filter(Boolean);
+    if (!user || !pwd) continue;
+    if (db.some(x => x.username === user)) {
+      exist++;
+      continue;
+    }
+
+    const nowTime = now();
+    const expire = days > 0
+      ? new Date(Date.now() + days * 86400000).toISOString()
+      : null;
+
+    db.push({
+      username: user,
+      password: pwd,
+      enabled: true,
+      createdAt: nowTime,
+      expireAt: expire,
+      token: null
+    });
+    success++;
+  }
+
+  writeDB(db);
+  res.json({ ok: true, success, exist });
 });
 
-app.get('/admin', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public/admin.html'));
-});
-
-app.listen(PORT, () => {
-  console.log(`Server started on port ${PORT}`);
-});
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`Running on ${PORT}`));
