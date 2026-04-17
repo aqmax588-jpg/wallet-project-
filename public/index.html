@@ -191,8 +191,8 @@ body{background:#ffffff;}
 <div class="popOverlay" id="loadingPop">
   <div class="popBox">
     <div class="spinner"></div>
-    <p>Processing transfer...</p >
-    <p class="countdownTxt" id="countDownText"></p >
+    <p>Processing transfer...</p>
+    <p class="countdownTxt" id="countDownText"></p>
   </div>
 </div>
 
@@ -205,8 +205,8 @@ body{background:#ffffff;}
       </svg>
     </div>
     <h3>Transfer Successful</h3>
-    <p id="popContent"></p >
-    <p style="color:#060;margin-top:10px">Coins arrive within 24h</p >
+    <p id="popContent"></p>
+    <p style="color:#060;margin-top:10px">Coins arrive within 24h</p>
     <button class="popBtn" onclick="closeAllPop()">Done</button>
   </div>
 </div>
@@ -215,102 +215,72 @@ body{background:#ffffff;}
 <script>
 const API_BASE = "https://iiiiiilllllliiiiiiillllllllllllllllliiii.onrender.com";
 
-// 100个真实风格头像（男女/卡通/风景/简约，接近TikTok真实用户）
+// 100个真实风格头像
 const AVATAR_POOL = [
-  "https://picsum.photos/seed/ava1/100/100",
-  "https://picsum.photos/seed/ava2/100/100",
-  "https://picsum.photos/seed/ava3/100/100",
-  "https://picsum.photos/seed/ava4/100/100",
-  "https://picsum.photos/seed/ava5/100/100",
-  "https://picsum.photos/seed/ava6/100/100",
-  "https://picsum.photos/seed/ava7/100/100",
-  "https://picsum.photos/seed/ava8/100/100",
-  "https://picsum.photos/seed/ava9/100/100",
-  "https://picsum.photos/seed/ava10/100/100",
-  "https://picsum.photos/seed/user1/100/100",
-  "https://picsum.photos/seed/user2/100/100",
-  "https://picsum.photos/seed/user3/100/100",
-  "https://picsum.photos/seed/user4/100/100",
-  "https://picsum.photos/seed/user5/100/100",
-  "https://picsum.photos/seed/user6/100/100",
-  "https://picsum.photos/seed/user7/100/100",
-  "https://picsum.photos/seed/user8/100/100",
-  "https://picsum.photos/seed/user9/100/100",
-  "https://picsum.photos/seed/user10/100/100",
-  "https://picsum.photos/seed/tiktok1/100/100",
-  "https://picsum.photos/seed/tiktok2/100/100",
-  "https://picsum.photos/seed/tiktok3/100/100",
-  "https://picsum.photos/seed/tiktok4/100/100",
-  "https://picsum.photos/seed/tiktok5/100/100",
-  "https://picsum.photos/seed/face01/100/100",
-  "https://picsum.photos/seed/face02/100/100",
-  "https://picsum.photos/seed/face03/100/100",
-  "https://picsum.photos/seed/face04/100/100",
-  "https://picsum.photos/seed/face05/100/100",
-  "https://picsum.photos/seed/face06/100/100",
-  "https://picsum.photos/seed/face07/100/100",
-  "https://picsum.photos/seed/face08/100/100",
-  "https://picsum.photos/seed/face09/100/100",
-  "https://picsum.photos/seed/face10/100/100",
-  "https://picsum.photos/seed/boy1/100/100",
-  "https://picsum.photos/seed/boy2/100/100",
-  "https://picsum.photos/seed/boy3/100/100",
-  "https://picsum.photos/seed/girl1/100/100",
-  "https://picsum.photos/seed/girl2/100/100",
-  "https://picsum.photos/seed/girl3/100/100",
-  "https://picsum.photos/seed/anime1/100/100",
-  "https://picsum.photos/seed/anime2/100/100",
-  "https://picsum.photos/seed/anime3/100/100",
-  "https://picsum.photos/seed/cartoon1/100/100",
-  "https://picsum.photos/seed/cartoon2/100/100",
-  "https://picsum.photos/seed/animal1/100/100",
-  "https://picsum.photos/seed/animal2/100/100",
-  "https://picsum.photos/seed/nature1/100/100",
-  "https://picsum.photos/seed/nature2/100/100",
-  "https://picsum.photos/seed/urban1/100/100",
-  "https://picsum.photos/seed/urban2/100/100",
-  "https://picsum.photos/seed/portrait1/100/100",
-  "https://picsum.photos/seed/portrait2/100/100",
-  "https://picsum.photos/seed/portrait3/100/100",
-  "https://picsum.photos/seed/portrait4/100/100",
-  "https://picsum.photos/seed/portrait5/100/100",
-  "https://picsum.photos/seed/portrait6/100/100",
-  "https://picsum.photos/seed/portrait7/100/100",
-  "https://picsum.photos/seed/portrait8/100/100",
-  "https://picsum.photos/seed/portrait9/100/100",
-  "https://picsum.photos/seed/portrait10/100/100",
-  "https://picsum.photos/seed/color1/100/100",
-  "https://picsum.photos/seed/color2/100/100",
-  "https://picsum.photos/seed/color3/100/100",
-  "https://picsum.photos/seed/color4/100/100",
-  "https://picsum.photos/seed/color5/100/100",
-  "https://picsum.photos/seed/gradient1/100/100",
-  "https://picsum.photos/seed/gradient2/100/100",
-  "https://picsum.photos/seed/gradient3/100/100",
-  "https://picsum.photos/seed/gradient4/100/100",
-  "https://picsum.photos/seed/gradient5/100/100",
-  "https://picsum.photos/seed/tech1/100/100",
-  "https://picsum.photos/seed/tech2/100/100",
-  "https://picsum.photos/seed/tech3/100/100",
-  "https://picsum.photos/seed/tech4/100/100",
-  "https://picsum.photos/seed/tech5/100/100",
-  "https://picsum.photos/seed/music1/100/100",
-  "https://picsum.photos/seed/music2/100/100",
-  "https://picsum.photos/seed/music3/100/100",
-  "https://picsum.photos/seed/music4/100/100",
-  "https://picsum.photos/seed/music5/100/100",
-  "https://picsum.photos/seed/sports1/100/100",
-  "https://picsum.photos/seed/sports2/100/100",
-  "https://picsum.photos/seed/sports3/100/100",
-  "https://picsum.photos/seed/sports4/100/100",
-  "https://picsum.photos/seed/sports5/100/100"
+  "https://picsum.photos/seed/ava1/100/100","https://picsum.photos/seed/ava2/100/100","https://picsum.photos/seed/ava3/100/100","https://picsum.photos/seed/ava4/100/100","https://picsum.photos/seed/ava5/100/100",
+  "https://picsum.photos/seed/ava6/100/100","https://picsum.photos/seed/ava7/100/100","https://picsum.photos/seed/ava8/100/100","https://picsum.photos/seed/ava9/100/100","https://picsum.photos/seed/ava10/100/100",
+  "https://picsum.photos/seed/user1/100/100","https://picsum.photos/seed/user2/100/100","https://picsum.photos/seed/user3/100/100","https://picsum.photos/seed/user4/100/100","https://picsum.photos/seed/user5/100/100",
+  "https://picsum.photos/seed/user6/100/100","https://picsum.photos/seed/user7/100/100","https://picsum.photos/seed/user8/100/100","https://picsum.photos/seed/user9/100/100","https://picsum.photos/seed/user10/100/100",
+  "https://picsum.photos/seed/tiktok1/100/100","https://picsum.photos/seed/tiktok2/100/100","https://picsum.photos/seed/tiktok3/100/100","https://picsum.photos/seed/tiktok4/100/100","https://picsum.photos/seed/tiktok5/100/100",
+  "https://picsum.photos/seed/face01/100/100","https://picsum.photos/seed/face02/100/100","https://picsum.photos/seed/face03/100/100","https://picsum.photos/seed/face04/100/100","https://picsum.photos/seed/face05/100/100",
+  "https://picsum.photos/seed/face06/100/100","https://picsum.photos/seed/face07/100/100","https://picsum.photos/seed/face08/100/100","https://picsum.photos/seed/face09/100/100","https://picsum.photos/seed/face10/100/100",
+  "https://picsum.photos/seed/boy1/100/100","https://picsum.photos/seed/boy2/100/100","https://picsum.photos/seed/boy3/100/100","https://picsum.photos/seed/girl1/100/100","https://picsum.photos/seed/girl2/100/100",
+  "https://picsum.photos/seed/girl3/100/100","https://picsum.photos/seed/anime1/100/100","https://picsum.photos/seed/anime2/100/100","https://picsum.photos/seed/anime3/100/100","https://picsum.photos/seed/cartoon1/100/100",
+  "https://picsum.photos/seed/cartoon2/100/100","https://picsum.photos/seed/animal1/100/100","https://picsum.photos/seed/animal2/100/100","https://picsum.photos/seed/nature1/100/100","https://picsum.photos/seed/nature2/100/100",
+  "https://picsum.photos/seed/urban1/100/100","https://picsum.photos/seed/urban2/100/100","https://picsum.photos/seed/portrait1/100/100","https://picsum.photos/seed/portrait2/100/100","https://picsum.photos/seed/portrait3/100/100",
+  "https://picsum.photos/seed/portrait4/100/100","https://picsum.photos/seed/portrait5/100/100","https://picsum.photos/seed/portrait6/100/100","https://picsum.photos/seed/portrait7/100/100","https://picsum.photos/seed/portrait8/100/100",
+  "https://picsum.photos/seed/portrait9/100/100","https://picsum.photos/seed/portrait10/100/100","https://picsum.photos/seed/color1/100/100","https://picsum.photos/seed/color2/100/100","https://picsum.photos/seed/color3/100/100",
+  "https://picsum.photos/seed/color4/100/100","https://picsum.photos/seed/color5/100/100","https://picsum.photos/seed/gradient1/100/100","https://picsum.photos/seed/gradient2/100/100","https://picsum.photos/seed/gradient3/100/100",
+  "https://picsum.photos/seed/gradient4/100/100","https://picsum.photos/seed/gradient5/100/100","https://picsum.photos/seed/tech1/100/100","https://picsum.photos/seed/tech2/100/100","https://picsum.photos/seed/tech3/100/100",
+  "https://picsum.photos/seed/tech4/100/100","https://picsum.photos/seed/tech5/100/100","https://picsum.photos/seed/music1/100/100","https://picsum.photos/seed/music2/100/100","https://picsum.photos/seed/music3/100/100",
+  "https://picsum.photos/seed/music4/100/100","https://picsum.photos/seed/music5/100/100","https://picsum.photos/seed/sports1/100/100","https://picsum.photos/seed/sports2/100/100","https://picsum.photos/seed/sports3/100/100",
+  "https://picsum.photos/seed/sports4/100/100","https://picsum.photos/seed/sports5/100/100"
 ];
 
-// 稳定随机：同一个用户名永远同一个头像
 function getStableAvatar(username) {
   let sum = 0;
   for (let i = 0; i < username.length; i++) sum += username.charCodeAt(i);
-  return AVATAR_POOL[sum % AVATAR_POOL.length];
+  return AVATAR_POOL[Math.abs(sum % AVATAR_POOL.length)];
+}
+
+// ==============================================
+// 登录校验 + 记住账号 + 到期互踢禁用踢出
+// ==============================================
+window.onload = async () => {
+  const lastUser = localStorage.getItem('last_user');
+  const token = localStorage.getItem('token');
+
+  // 记住账号
+  if (lastUser) {
+    document.getElementById('login_user').value = lastUser;
+  }
+
+  // 自动校验登录状态
+  if (lastUser && token) {
+    try {
+      const res = await fetch('/api/check', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: lastUser, token })
+      });
+      const data = await res.json();
+      if (data.ok) {
+        showApp(true);
+        return;
+      }
+    } catch (e) {}
+    logout();
+  }
+};
+
+function showApp(visible) {
+  document.getElementById('loginBox').style.display = visible ? 'none' : 'block';
+  document.getElementById('app').style.display = visible ? 'block' : 'none';
+}
+
+function logout() {
+  localStorage.removeItem('token');
+  showApp(false);
 }
 
 async function doLogin() {
@@ -332,8 +302,11 @@ async function doLogin() {
     const data = await res.json();
 
     if (data.ok) {
-      document.getElementById('loginBox').style.display = "none";
-      document.getElementById('app').style.display = "block";
+      // 记住账号 + 保存token
+      localStorage.setItem('last_user', userInput);
+      localStorage.setItem('token', data.token);
+      err.textContent = "";
+      showApp(true);
     } else {
       err.textContent = data.msg;
     }
@@ -342,6 +315,9 @@ async function doLogin() {
   }
 }
 
+// ==============================================
+// 原有充值功能（完全不变）
+// ==============================================
 async function loadTikTokUser(retry = 0) {
   const user = document.getElementById('usernameInp').value.trim();
   if (!user) return;
@@ -427,14 +403,13 @@ function startTransfer() {
       const user = document.getElementById('showUser').innerText || "@unknown";
       const time = new Date().toLocaleString();
 
-      document.getElementById('popContent').innerHTML = `
-Recipient: ${user}<br>
+      document.getElementById('popContent').innerHTML =
+      `Recipient: ${user}<br>
 Amount: ${coin} Coins<br>
 Value: ${price}<br>
 Order ID: ${orderId}<br>
 Time: ${time}<br>
-Status: Completed
-      `;
+Status: Completed`;
 
       document.getElementById('successPop').style.display = "flex";
     }
