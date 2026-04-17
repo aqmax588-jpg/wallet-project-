@@ -62,8 +62,11 @@ app.post('/api/login', (req, res) => {
   // 生成新 token，实现互踢
   const token = genToken();
   user.token = token;
+  
+  // 登录时更新最后活跃时间
+  user.lastActive = Date.now();
+  
   writeDB(db);
-
   res.json({ ok: true, token });
 });
 
@@ -84,6 +87,10 @@ app.post('/api/check', (req, res) => {
     return res.json({ ok: false });
   }
 
+  // 每次校验都更新在线状态
+  user.lastActive = Date.now();
+  writeDB(db);
+
   res.json({ ok: true });
 });
 
@@ -100,7 +107,20 @@ app.post('/api/admin/login', (req, res) => {
 });
 
 app.get('/api/admin/list', (req, res) => {
-  res.json(readDB());
+  const db = readDB();
+  const nowTime = Date.now();
+  // 10 分钟无操作视为离线（可自己改数字）
+  const offlineMs = 10 * 60 * 1000;
+
+  const result = db.map(u => {
+    const isOnline = !!u.lastActive && (nowTime - u.lastActive < offlineMs);
+    return {
+      ...u,
+      online: isOnline
+    };
+  });
+
+  res.json(result);
 });
 
 app.post('/api/admin/delete', (req, res) => {
@@ -150,7 +170,8 @@ app.post('/api/admin/batch', (req, res) => {
       enabled: true,
       createdAt: nowTime,
       expireAt: expire,
-      token: null
+      token: null,
+      lastActive: null
     });
     success++;
   }
