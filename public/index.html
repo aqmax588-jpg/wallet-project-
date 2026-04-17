@@ -130,7 +130,7 @@ body{background:#ffffff;}
     <input type="password" id="login_pwd" placeholder="Enter password">
   </div>
   <button type="button" class="login-btn" onclick="doLogin()">Login</button>
-  <div class="error" id="err_msg"></div>
+  <<div class="error" id="err_msg"></div>
 </div>
 
 <div id="app" style="display:none;">
@@ -143,7 +143,7 @@ body{background:#ffffff;}
 <div class="loading-text" id="loading">Loading user data, please wait...</div>
 
 <div class="user-section">
-  <img id="avatar" class="avatar">
+  < img id="avatar" class="avatar">
   <div class="user-info">
     <div id="showUser">@username</div>
     <div class="user-stats">
@@ -245,7 +245,6 @@ async function doLogin() {
   }
 }
 
-// ====================== 方案2：直连真实头像，靠VPN突破限制
 async function loadTikTokUser(retry = 0) {
   const user = document.getElementById('usernameInp').value.trim();
   if (!user) return;
@@ -261,10 +260,8 @@ async function loadTikTokUser(retry = 0) {
     if (data.success) {
       document.getElementById('showUser').innerText = '@' + user;
 
-      // 直出真实头像，不走任何代理，完全靠VPN加载
       const avatarImg = document.getElementById('avatar');
       avatarImg.src = data.avatar || DEFAULT_AVATAR;
-      // 加载失败 fallback
       avatarImg.onerror = function(){
         this.src = DEFAULT_AVATAR;
       };
