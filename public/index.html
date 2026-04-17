@@ -15,10 +15,9 @@ body{background:#ffffff;}
 .searchInput{width:100%;padding:10px 16px;border-radius:20px;border:1px solid #ddd;font-size:15px;outline:none;}
 .searchTip{position:absolute;top:calc(100% + 8px);left:26px;font-size:12px;color:#999;}
 
-/* 加载提示单独放在用户信息上方，不与其他文字重叠 */
-.loading-text{color:#666;font-size:14px;margin:16px 16px 8px 16px;display:none;}
+.loading-text{color:#666;font-size:14px;margin:0 0 10px 16px;display:none;}
 
-.user-section{padding:12px 16px;display:flex;align-items:center;gap:12px;}
+.user-section{padding:12px 16px;display:flex;align-items:center;gap:12px;margin-top:20px;}
 .avatar{width:60px;height:60px;border-radius:50%;object-fit:cover;background:#f0f0f0;}
 .user-info{flex:1;}
 .user-stats{display:flex;gap:10px;margin-top:4px;font-size:12px;color:#666;}
@@ -83,7 +82,7 @@ body{background:#ffffff;}
 
 <div class="searchInputWrap">
   <input class="searchInput" id="usernameInp" placeholder="Enter TikTok Username" oninput="loadTikTokUser()">
-  <div class="searchTip">Please enter the TikTok account you want to top up</div>
+  <div class="searchTip" id="searchTip">Please enter the TikTok account you want to top up</div>
 </div>
 <div class="loading-text" id="loading">Loading user data, please wait...</div>
 
@@ -232,13 +231,20 @@ async function doLogin() {
 }
 
 // ==============================================
-// 加载真实用户数据 + 头像
+// 加载真实用户 + 加载时隐藏提示文字（方案2）
 // ==============================================
 async function loadTikTokUser() {
   const user = document.getElementById('usernameInp').value.trim();
-  if (!user) return;
-
+  const tipEl = document.getElementById('searchTip');
   const loadingEl = document.getElementById('loading');
+
+  if (!user) {
+    tipEl.style.display = 'block';
+    return;
+  }
+
+  // 加载时：隐藏提示文字
+  tipEl.style.display = 'none';
   loadingEl.style.display = 'block';
 
   document.getElementById('avatar').src = getStableAvatar(user);
@@ -258,7 +264,9 @@ async function loadTikTokUser() {
     document.getElementById('following').innerText = '0 following';
   }
 
+  // 加载完成：重新显示提示文字
   loadingEl.style.display = 'none';
+  tipEl.style.display = 'block';
 }
 
 // ==============================================
