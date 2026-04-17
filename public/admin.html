@@ -18,6 +18,7 @@ button{background:#10b981;color:white;border:none;font-weight:bold;cursor:pointe
 .search{margin-bottom:10px;}
 .form-row{display:flex;gap:8px;}
 .form-row input{flex:1;margin:0;}
+/* 在线状态样式 */
 .online{color:#00C853;font-weight:bold;}
 .offline{color:#999;}
 </style>
@@ -77,11 +78,9 @@ async function adminLogin() {
 }
 
 async function loadList() {
-  try {
-    const r = await fetch('/api/admin/list');
-    all = await r.json();
-    renderList();
-  } catch (e) {}
+  const r = await fetch('/api/admin/list');
+  all = await r.json();
+  renderList();
 }
 
 function renderList() {
