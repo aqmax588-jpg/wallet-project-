@@ -1,132 +1,114 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Account Manager</title>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin</title>
 <style>
-*{margin:0;padding:0;box-sizing:border-box;font-family:system-ui,sans-serif}
-body{background:#f9fafb;padding:20px}
-.login{max-width:360px;margin:50px auto;background:#fff;padding:24px;border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,.08)}
-.login h2{margin-bottom:16px}
-input{width:100%;padding:10px;margin:8px 0;border:1px solid #ddd;border-radius:8px}
-button{padding:10px 14px;background:#10b981;color:#fff;border:none;border-radius:8px;width:100%;cursor:pointer}
-.panel{display:none;max-width:700px;margin:0 auto}
-.card{background:#fff;padding:16px;border-radius:12px;margin-bottom:12px}
-.row{display:flex;gap:8px;margin:4px 0}
-.row input{flex:1;padding:8px}
-.btn2{padding:8px;background:#ef4444;color:#fff;border:none;border-radius:6px;cursor:pointer}
-.btn3{padding:8px;background:#2563eb;color:#fff;border:none;border-radius:6px;cursor:pointer}
-.btn-add{margin:16px 0;background:#16a34a}
+body{font-family:system-ui,sans-serif;margin:0;padding:16px;background:#f7f8fa;}
+.box{background:#fff;border-radius:12px;padding:16px;margin-bottom:16px;box-shadow:0 2px 8px rgba(0,0,0,0.06);}
+h2{margin-top:0;font-size:18px;}
+input,textarea,button{width:100%;padding:10px 12px;border-radius:8px;border:1px solid #ddd;margin-bottom:10px;box-sizing:border-box;}
+button{background:#10b981;color:white;border:none;font-weight:bold;cursor:pointer;}
+.gray{background:#6b7280;}
+.red{background:#ef4444;}
+.table{width:100%;border-collapse:collapse;margin-top:10px;}
+.table th,.table td{padding:8px;text-align:left;font-size:14px;border-bottom:1px solid #eee;}
+.table th{background:#f9fafb;}
+.search{margin-bottom:10px;}
 </style>
 </head>
 <body>
-
-<div class="login" id="loginPanel">
-  <h2>Admin Login</h2>
-  <input id="auser" placeholder="Admin User"><br>
-  <input id="apwd" type="password" placeholder="Admin Password"><br>
-  <button type="button" onclick="adminLogin()">Login</button>
+<div class="box">
+  <h2>管理员登录</h2>
+  <input id="admin_user" placeholder="账号 admin"><br>
+  <input id="admin_pwd" type="password" placeholder="密码 admin123"><br>
+  <button onclick="adminLogin()">登录</button>
 </div>
 
-<div class="panel" id="panel">
-  <h2>Account Manager</h2>
-  <button class="btn-add" type="button" onclick="addUser()">+ Add Account</button>
-  <div id="list"></div>
+<div id="adminPanel" style="display:none;">
+  <div class="box">
+    <h2>批量添加账号</h2>
+    <textarea rows="6" id="batchLines" placeholder="一行一个：账号 密码"></textarea>
+    <input id="expireDays" type="number" placeholder="有效天数（0=永久）" value="0">
+    <button onclick="batchAdd()">批量导入</button>
+  </div>
+
+  <div class="box">
+    <h2>账号列表</h2>
+    <input class="search" id="search" placeholder="搜索用户名" oninput="renderList()">
+    <div id="listWrap"></div>
+  </div>
 </div>
 
 <script>
-const ADMIN_USER = 'admin';
-const ADMIN_PASS = 'admin888';
-let userList = [];
-
-function adminLogin() {
-  const u = document.getElementById('auser').value.trim();
-  const p = document.getElementById('apwd').value.trim();
-  if (u === ADMIN_USER && p === ADMIN_PASS) {
-    document.getElementById('loginPanel').style.display = 'none';
-    document.getElementById('panel').style.display = 'block';
-    loadUsers();
+let all = [];
+async function adminLogin() {
+  const user = document.getElementById('admin_user').value;
+  const pwd = document.getElementById('admin_pwd').value;
+  const r = await fetch('/api/admin/login', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ user, pwd })
+  });
+  const d = await r.json();
+  if (d.ok) {
+    document.getElementById('adminPanel').style.display = 'block';
+    loadList();
   } else {
-    alert('Wrong username or password');
+    alert('失败');
   }
 }
 
-async function loadUsers() {
-  const res = await fetch('/api/admin/users');
-  userList = await res.json();
-  render();
+async function loadList() {
+  const r = await fetch('/api/admin/list');
+  all = await r.json();
+  renderList();
 }
 
-function render() {
-  const d = document.getElementById('list');
-  d.innerHTML = '';
-  userList.forEach(u => {
-    const div = document.createElement('div');
-    div.className = 'card';
-    div.innerHTML = `
-      <div class="row"><input value="${u.username}" id="u${u.id}"></div>
-      <div class="row"><input value="${u.password}" id="p${u.id}" placeholder="Password"></div>
-      <div class="row"><input value="${u.expire}" id="e${u.id}" placeholder="2027-12-31"></div>
-      <div class="row">
-        <button type="button" class="btn3" onclick="update(${u.id})">Save</button>
-        <button type="button" class="btn${u.banned ? 3 : 2}" onclick="toggle(${u.id})">${u.banned ? 'Enable' : 'Ban'}</button>
-        <button type="button" class="btn2" onclick="del(${u.id})">Del</button>
-      </div>
-    `;
-    d.appendChild(div);
+function renderList() {
+  const kw = document.getElementById('search').value.toLowerCase();
+  const f = all.filter(x => x.username.toLowerCase().includes(kw));
+  const html = `<table class="table"><tr><th>账号</th><th>创建</th><th>到期</th><th>状态</th><th>操作</th></tr>${f.map(x => `
+<tr>
+<td>${x.username}</td>
+<td>${new Date(x.createdAt).toLocaleString()}</td>
+<td>${x.expireAt ? new Date(x.expireAt).toLocaleString() : '永久'}</td>
+<td>${x.enabled ? '启用' : '禁用'}</td>
+<td>
+<button style="padding:4px 8px;margin:2px;font-size:12px" onclick="toggle('${x.username}',${!x.enabled})">${x.enabled?'禁用':'启用'}</button>
+<button class="red" style="padding:4px 8px;margin:2px;font-size:12px" onclick="del('${x.username}')">删除</button>
+</td>
+</tr>
+  `).join('')}</table>`;
+  document.getElementById('listWrap').innerHTML = html;
+}
+
+async function batchAdd() {
+  const lines = document.getElementById('batchLines').value;
+  const days = Number(document.getElementById('expireDays').value) || 0;
+  const r = await fetch('/api/admin/batch', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ lines, days })
   });
+  const d = await r.json();
+  alert(`成功：${d.success} 个，已存在：${d.exist} 个`);
+  loadList();
 }
 
-async function update(id) {
-  const u = document.getElementById('u'+id).value.trim();
-  const p = document.getElementById('p'+id).value.trim();
-  const e = document.getElementById('e'+id).value.trim();
-
-  if (!u || !p || !e) {
-    alert('Please fill in all fields');
-    return;
-  }
-
-  await fetch('/api/admin/update', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ id, username: u, password: p, expire: e })
-  });
-
-  alert('Saved successfully!');
-  loadUsers();
-}
-
-async function toggle(id) {
-  await fetch('/api/admin/toggle', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ id })
-  });
-  loadUsers();
-}
-
-async function del(id) {
+async function del(user) {
+  if (!confirm('确定删除？')) return;
   await fetch('/api/admin/delete', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ id })
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username: user })
   });
-  loadUsers();
+  loadList();
 }
 
-async function addUser() {
-  await fetch('/api/admin/add', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      username: 'user',
-      password: '123456',
-      expire: '2027-12-31'
-    })
+async function toggle(user, enabled) {
+  await fetch('/api/admin/toggle', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username: user, enabled })
   });
-  loadUsers();
+  loadList();
 }
 </script>
 </body>
