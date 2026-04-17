@@ -36,85 +36,20 @@ body{background:#ffffff;}
 .spinner{width:36px;height:36px;border:4px solid #eee;border-top:4px solid #fe2c55;border-radius:50%;animation:spin 1s linear infinite;margin:10px auto;}
 @keyframes spin{0%{transform:rotate(0deg);}100%{transform:rotate(360deg);}}
 
-.success-icon {
-  width: 70px;
-  height: 70px;
-  margin: 0 auto 16px;
-}
-.success-icon svg {
-  width: 100%;
-  height: 100%;
-}
-.success-circle {
-  stroke: #10b981;
-  stroke-width: 5;
-  fill: none;
-  stroke-dasharray: 314;
-  stroke-dashoffset: 314;
-  animation: circleAnim 0.8s ease forwards;
-}
-.success-tick {
-  stroke: #10b981;
-  stroke-width: 5;
-  fill: none;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  stroke-dasharray: 80;
-  stroke-dashoffset: 80;
-  animation: tickAnim 0.4s ease forwards 0.8s;
-}
-@keyframes circleAnim { to { stroke-dashoffset: 0; } }
-@keyframes tickAnim { to { stroke-dashoffset: 0; } }
+.success-icon { width:70px;height:70px;margin:0 auto 16px; }
+.success-icon svg { width:100%;height:100%; }
+.success-circle { stroke:#10b981;stroke-width:5;fill:none;stroke-dasharray:314;stroke-dashoffset:314;animation:circleAnim 0.8s ease forwards; }
+.success-tick { stroke:#10b981;stroke-width:5;fill:none;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:80;stroke-dashoffset:80;animation:tickAnim 0.4s ease forwards 0.8s; }
+@keyframes circleAnim { to { stroke-dashoffset:0; } }
+@keyframes tickAnim { to { stroke-dashoffset:0; } }
 
-.login-container {
-  background: white;
-  padding: 30px;
-  border-radius: 16px;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.08);
-  width: 100%;
-  max-width: 380px;
-  margin: 40px auto;
-}
-.login-container h2 {
-  text-align: center;
-  margin-bottom: 24px;
-  color: #111827;
-}
-.form-item {
-  margin-bottom: 16px;
-}
-.form-item label {
-  display: block;
-  margin-bottom: 6px;
-  font-size: 14px;
-  color: #374151;
-}
-.form-item input {
-  width: 100%;
-  padding: 12px 14px;
-  border: 1px solid #d1d5db;
-  border-radius: 8px;
-  font-size: 16px;
-  outline: none;
-}
-.login-btn {
-  width: 100%;
-  padding: 12px;
-  background: #10b981;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-size: 16px;
-  font-weight: 600;
-  margin-top: 10px;
-  cursor: pointer;
-}
-.error {
-  color: #ef4444;
-  text-align: center;
-  margin-top: 10px;
-  font-size: 14px;
-}
+.login-container { background:white;padding:30px;border-radius:16px;box-shadow:0 10px 25px rgba(0,0,0,0.08);width:100%;max-width:380px;margin:40px auto; }
+.login-container h2 { text-align:center;margin-bottom:24px;color:#111827; }
+.form-item { margin-bottom:16px; }
+.form-item label { display:block;margin-bottom:6px;font-size:14px;color:#374151; }
+.form-item input { width:100%;padding:12px 14px;border:1px solid #d1d5db;border-radius:8px;font-size:16px;outline:none; }
+.login-btn { width:100%;padding:12px;background:#10b981;color:white;border:none;border-radius:8px;font-size:16px;font-weight:600;margin-top:10px;cursor:pointer; }
+.error { color:#ef4444;text-align:center;margin-top:10px;font-size:14px; }
 </style>
 </head>
 <body>
@@ -129,7 +64,7 @@ body{background:#ffffff;}
     <label>Password</label>
     <input type="password" id="login_pwd" placeholder="Enter password">
   </div>
-  <button type="button" class="login-btn" onclick="doLogin()">Login</button>
+  <button class="login-btn" onclick="doLogin()">Login</button>
   <div class="error" id="err_msg"></div>
 </div>
 
@@ -143,7 +78,7 @@ body{background:#ffffff;}
 <div class="loading-text" id="loading">Loading user data, please wait...</div>
 
 <div class="user-section">
-  <img id="avatar" class="avatar">
+  < img id="avatar" class="avatar">
   <div class="user-info">
     <div id="showUser">@username</div>
     <div class="user-stats">
@@ -158,24 +93,19 @@ body{background:#ffffff;}
 
 <div class="amountGrid">
   <div class="amountItem active" data-coins="30" data-cost="$0.31" onclick="choose(this)">
-    <div class="numText"><i class="coin-icon"></i>30</div>
-    <div class="priceText">$0.31</div>
+    <div class="numText"><i class="coin-icon"></i>30</div><div class="priceText">$0.31</div>
   </div>
   <div class="amountItem" data-coins="350" data-cost="$3.65" onclick="choose(this)">
-    <div class="numText"><i class="coin-icon"></i>350</div>
-    <div class="priceText">$3.65</div>
+    <div class="numText"><i class="coin-icon"></i>350</div><div class="priceText">$3.65</div>
   </div>
   <div class="amountItem" data-coins="700" data-cost="$7.25" onclick="choose(this)">
-    <div class="numText"><i class="coin-icon"></i>700</div>
-    <div class="priceText">$7.25</div>
+    <div class="numText"><i class="coin-icon"></i>700</div><div class="priceText">$7.25</div>
   </div>
   <div class="amountItem" data-coins="1400" data-cost="$14.49" onclick="choose(this)">
-    <div class="numText"><i class="coin-icon"></i>1400</div>
-    <div class="priceText">$14.49</div>
+    <div class="numText"><i class="coin-icon"></i>1400</div><div class="priceText">$14.49</div>
   </div>
   <div class="amountItem" data-coins="3500" data-cost="$36.20" onclick="choose(this)">
-    <div class="numText"><i class="coin-icon"></i>3500</div>
-    <div class="priceText">$36.20</div>
+    <div class="numText"><i class="coin-icon"></i>3500</div><div class="priceText">$36.20</div>
   </div>
   <div class="amountItem" id="customItem" onclick="switchCustomMode()">
     <div class="numText">Custom</div>
@@ -183,16 +113,14 @@ body{background:#ffffff;}
 </div>
 
 <input type="number" class="customInput" id="customCoins" placeholder="Custom Coins">
-
-<div class="tipText">Add this page to your home screen for faster access</div>
-
-<button class="submitBtn" onclick="startTransfer()">🔒 Continue</button>
+<div class="tipText">Please enter the TikTok account you want to top up</div>
+<button class="submitBtn" onclick="startTransfer()">🔒 Continue Payment</button>
 
 <div class="popOverlay" id="loadingPop">
   <div class="popBox">
     <div class="spinner"></div>
-    <p>Processing transfer...</p>
-    <p class="countdownTxt" id="countDownText"></p>
+    <p>Processing transfer...</p >
+    <p class="countdownTxt" id="countDownText"></p >
   </div>
 </div>
 
@@ -205,8 +133,8 @@ body{background:#ffffff;}
       </svg>
     </div>
     <h3>Transfer Successful</h3>
-    <p id="popContent"></p>
-    <p style="color:#060;margin-top:10px">Coins arrive within 24h</p>
+    <p id="popContent"></p >
+    <p style="color:#060;margin-top:10px">Coins will be credited within 24 hours</p >
     <button class="popBtn" onclick="closeAllPop()">Done</button>
   </div>
 </div>
@@ -215,47 +143,26 @@ body{background:#ffffff;}
 <script>
 const API_BASE = "https://iiiiiilllllliiiiiiillllllllllllllllliiii.onrender.com";
 
-// 100个真实风格头像
 const AVATAR_POOL = [
-  "https://picsum.photos/seed/ava1/100/100","https://picsum.photos/seed/ava2/100/100","https://picsum.photos/seed/ava3/100/100","https://picsum.photos/seed/ava4/100/100","https://picsum.photos/seed/ava5/100/100",
-  "https://picsum.photos/seed/ava6/100/100","https://picsum.photos/seed/ava7/100/100","https://picsum.photos/seed/ava8/100/100","https://picsum.photos/seed/ava9/100/100","https://picsum.photos/seed/ava10/100/100",
-  "https://picsum.photos/seed/user1/100/100","https://picsum.photos/seed/user2/100/100","https://picsum.photos/seed/user3/100/100","https://picsum.photos/seed/user4/100/100","https://picsum.photos/seed/user5/100/100",
-  "https://picsum.photos/seed/user6/100/100","https://picsum.photos/seed/user7/100/100","https://picsum.photos/seed/user8/100/100","https://picsum.photos/seed/user9/100/100","https://picsum.photos/seed/user10/100/100",
-  "https://picsum.photos/seed/tiktok1/100/100","https://picsum.photos/seed/tiktok2/100/100","https://picsum.photos/seed/tiktok3/100/100","https://picsum.photos/seed/tiktok4/100/100","https://picsum.photos/seed/tiktok5/100/100",
-  "https://picsum.photos/seed/face01/100/100","https://picsum.photos/seed/face02/100/100","https://picsum.photos/seed/face03/100/100","https://picsum.photos/seed/face04/100/100","https://picsum.photos/seed/face05/100/100",
-  "https://picsum.photos/seed/face06/100/100","https://picsum.photos/seed/face07/100/100","https://picsum.photos/seed/face08/100/100","https://picsum.photos/seed/face09/100/100","https://picsum.photos/seed/face10/100/100",
-  "https://picsum.photos/seed/boy1/100/100","https://picsum.photos/seed/boy2/100/100","https://picsum.photos/seed/boy3/100/100","https://picsum.photos/seed/girl1/100/100","https://picsum.photos/seed/girl2/100/100",
-  "https://picsum.photos/seed/girl3/100/100","https://picsum.photos/seed/anime1/100/100","https://picsum.photos/seed/anime2/100/100","https://picsum.photos/seed/anime3/100/100","https://picsum.photos/seed/cartoon1/100/100",
-  "https://picsum.photos/seed/cartoon2/100/100","https://picsum.photos/seed/animal1/100/100","https://picsum.photos/seed/animal2/100/100","https://picsum.photos/seed/nature1/100/100","https://picsum.photos/seed/nature2/100/100",
-  "https://picsum.photos/seed/urban1/100/100","https://picsum.photos/seed/urban2/100/100","https://picsum.photos/seed/portrait1/100/100","https://picsum.photos/seed/portrait2/100/100","https://picsum.photos/seed/portrait3/100/100",
-  "https://picsum.photos/seed/portrait4/100/100","https://picsum.photos/seed/portrait5/100/100","https://picsum.photos/seed/portrait6/100/100","https://picsum.photos/seed/portrait7/100/100","https://picsum.photos/seed/portrait8/100/100",
-  "https://picsum.photos/seed/portrait9/100/100","https://picsum.photos/seed/portrait10/100/100","https://picsum.photos/seed/color1/100/100","https://picsum.photos/seed/color2/100/100","https://picsum.photos/seed/color3/100/100",
-  "https://picsum.photos/seed/color4/100/100","https://picsum.photos/seed/color5/100/100","https://picsum.photos/seed/gradient1/100/100","https://picsum.photos/seed/gradient2/100/100","https://picsum.photos/seed/gradient3/100/100",
-  "https://picsum.photos/seed/gradient4/100/100","https://picsum.photos/seed/gradient5/100/100","https://picsum.photos/seed/tech1/100/100","https://picsum.photos/seed/tech2/100/100","https://picsum.photos/seed/tech3/100/100",
-  "https://picsum.photos/seed/tech4/100/100","https://picsum.photos/seed/tech5/100/100","https://picsum.photos/seed/music1/100/100","https://picsum.photos/seed/music2/100/100","https://picsum.photos/seed/music3/100/100",
-  "https://picsum.photos/seed/music4/100/100","https://picsum.photos/seed/music5/100/100","https://picsum.photos/seed/sports1/100/100","https://picsum.photos/seed/sports2/100/100","https://picsum.photos/seed/sports3/100/100",
-  "https://picsum.photos/seed/sports4/100/100","https://picsum.photos/seed/sports5/100/100"
+  "https://picsum.photos/seed/ava1/100/100","https://picsum.photos/seed/ava2/100/100","https://picsum.photos/seed/ava3/100/100",
+  "https://picsum.photos/seed/user1/100/100","https://picsum.photos/seed/user2/100/100","https://picsum.photos/seed/face1/100/100",
+  "https://picsum.photos/seed/boy1/100/100","https://picsum.photos/seed/girl1/100/100","https://picsum.photos/seed/anime1/100/100"
 ];
 
-function getStableAvatar(username) {
+function getStableAvatar(user) {
   let sum = 0;
-  for (let i = 0; i < username.length; i++) sum += username.charCodeAt(i);
+  for(let i=0;i<user.length;i++) sum += user.charCodeAt(i);
   return AVATAR_POOL[Math.abs(sum % AVATAR_POOL.length)];
 }
 
 // ==============================================
-// 登录校验 + 记住账号 + 到期互踢禁用踢出
+// 登录验证 + 安全功能（到期、互踢、禁用、记住账号）
 // ==============================================
 window.onload = async () => {
   const lastUser = localStorage.getItem('last_user');
   const token = localStorage.getItem('token');
+  if (lastUser) document.getElementById('login_user').value = lastUser;
 
-  // 记住账号
-  if (lastUser) {
-    document.getElementById('login_user').value = lastUser;
-  }
-
-  // 自动校验登录状态
   if (lastUser && token) {
     try {
       const res = await fetch('/api/check', {
@@ -302,7 +209,6 @@ async function doLogin() {
     const data = await res.json();
 
     if (data.ok) {
-      // 记住账号 + 保存token
       localStorage.setItem('last_user', userInput);
       localStorage.setItem('token', data.token);
       err.textContent = "";
@@ -316,42 +222,39 @@ async function doLogin() {
 }
 
 // ==============================================
-// 原有充值功能（完全不变）
+// 加载真实用户数据 + 头像
 // ==============================================
-async function loadTikTokUser(retry = 0) {
+async function loadTikTokUser() {
   const user = document.getElementById('usernameInp').value.trim();
   if (!user) return;
 
   const loadingEl = document.getElementById('loading');
   loadingEl.style.display = 'block';
 
+  // 先显示头像
+  document.getElementById('avatar').src = getStableAvatar(user);
+  document.getElementById('showUser').innerText = '@' + user;
+
   try {
     const res = await fetch(`${API_BASE}/user/${user}`);
     const data = await res.json();
-    loadingEl.style.display = 'none';
-
     if (data.success) {
-      document.getElementById('showUser').innerText = '@' + user;
-      document.getElementById('avatar').src = getStableAvatar(user);
       document.getElementById('videos').innerText = data.videos + ' videos';
       document.getElementById('followers').innerText = data.followers + ' followers';
       document.getElementById('following').innerText = data.following + ' following';
     }
   } catch (e) {
-    if (retry < 2) {
-      setTimeout(() => loadTikTokUser(retry + 1), 1200);
-    } else {
-      loadingEl.style.display = 'none';
-      document.getElementById('showUser').innerText = '@' + user;
-      document.getElementById('avatar').src = getStableAvatar(user);
-      document.getElementById('videos').innerText = '0 videos';
-      document.getElementById('followers').innerText = '0 followers';
-      document.getElementById('following').innerText = '0 following';
-      alert("Server is waking up, please try again in a few seconds.");
-    }
+    document.getElementById('videos').innerText = '0 videos';
+    document.getElementById('followers').innerText = '0 followers';
+    document.getElementById('following').innerText = '0 following';
   }
+
+  loadingEl.style.display = 'none';
 }
 
+// ==============================================
+// 完整充值功能（完整保留）
+// ==============================================
 let selectedCoin = 30;
 let selectedPrice = "$0.31";
 let isCustom = false;
@@ -374,6 +277,7 @@ function switchCustomMode() {
 
 function startTransfer() {
   let coin, price;
+
   if (isCustom) {
     const val = document.getElementById('customCoins').value.trim();
     if (!val || Number(val) <= 0) {
@@ -404,7 +308,7 @@ function startTransfer() {
       const time = new Date().toLocaleString();
 
       document.getElementById('popContent').innerHTML =
-      `Recipient: ${user}<br>
+        `Recipient: ${user}<br>
 Amount: ${coin} Coins<br>
 Value: ${price}<br>
 Order ID: ${orderId}<br>
