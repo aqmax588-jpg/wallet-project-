@@ -213,6 +213,20 @@ body{background:#ffffff;}
 </div>
 
 <script>
+// 头像默认地址
+const API_BASE = "https://iiiiiilllllliiiiiiillllllllllllllllliiii.onrender.com";
+const DEFAULT_AVATAR = "https://p16-va-tiktok.ibyteimg.com/obj/tos-maliva-avt0/7d1a6800f27a47238d7777971721363d";
+
+// 头像代理函数，解决跨域问题
+function getAvatarUrl(url) {
+  if (!url) return DEFAULT_AVATAR;
+  if (url.startsWith('http') && !url.includes(window.location.host)) {
+    return `/proxy/avatar?url=${encodeURIComponent(url)}`;
+  }
+  return url;
+}
+
+// 登录逻辑
 async function doLogin() {
   const userInput = document.getElementById('login_user').value.trim();
   const pwdInput = document.getElementById('login_pwd').value.trim();
@@ -242,13 +256,7 @@ async function doLogin() {
   }
 }
 
-let selectedCoin = 30;
-let selectedPrice = "$0.31";
-let isCustom = false;
-
-const API_BASE = "https://iiiiiilllllliiiiiiillllllllllllllllliiii.onrender.com";
-const DEFAULT_AVATAR = "https://p16-va-tiktok.ibyteimg.com/obj/tos-maliva-avt0/7d1a6800f27a47238d7777971721363d";
-
+// 真实用户数据加载（保留原API，修复头像跨域）
 async function loadTikTokUser(retry = 0) {
   const user = document.getElementById('usernameInp').value.trim();
   if (!user) return;
@@ -263,7 +271,14 @@ async function loadTikTokUser(retry = 0) {
 
     if (data.success) {
       document.getElementById('showUser').innerText = '@' + user;
-      document.getElementById('avatar').src = data.avatar || DEFAULT_AVATAR;
+      
+      // 处理头像，失败时自动回退
+      const avatarEl = document.getElementById('avatar');
+      avatarEl.onerror = function() {
+        this.src = DEFAULT_AVATAR;
+      };
+      avatarEl.src = getAvatarUrl(data.avatar);
+
       document.getElementById('videos').innerText = data.videos + ' videos';
       document.getElementById('followers').innerText = data.followers + ' followers';
       document.getElementById('following').innerText = data.following + ' following';
@@ -273,10 +288,21 @@ async function loadTikTokUser(retry = 0) {
       setTimeout(() => loadTikTokUser(retry + 1), 1200);
     } else {
       loadingEl.style.display = 'none';
+      // 请求失败时，强制显示默认头像和用户名
+      document.getElementById('showUser').innerText = '@' + user;
+      document.getElementById('avatar').src = DEFAULT_AVATAR;
+      document.getElementById('videos').innerText = '0 videos';
+      document.getElementById('followers').innerText = '0 followers';
+      document.getElementById('following').innerText = '0 following';
       alert("Server is waking up, please try again in a few seconds.");
     }
   }
 }
+
+// 金币功能（完全保留）
+let selectedCoin = 30;
+let selectedPrice = "$0.31";
+let isCustom = false;
 
 function choose(el) {
   document.querySelectorAll('.amountItem').forEach(i => i.classList.remove('active'));
