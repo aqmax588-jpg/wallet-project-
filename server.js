@@ -25,13 +25,12 @@ function now() {
   return new Date().toISOString();
 }
 
-// 生成随机 token
 function genToken() {
   return Math.random().toString(36).slice(2) + Date.now().toString(36);
 }
 
 // ------------------------------
-// 用户登录（带过期、禁用、互踢）
+// 登录 → 新token覆盖旧token（A被顶）
 // ------------------------------
 app.post('/api/login', (req, res) => {
   const { username, password } = req.body;
@@ -40,17 +39,14 @@ app.post('/api/login', (req, res) => {
   const user = db.find(u => u.username === username);
   if (!user) return res.json({ ok: false, msg: '账号不存在' });
 
-  // 密码错误
   if (user.password !== password) {
     return res.json({ ok: false, msg: '密码错误' });
   }
 
-  // 被禁用
   if (!user.enabled) {
     return res.json({ ok: false, msg: '账号已禁用' });
   }
 
-  // 已到期
   const nowTs = Date.now();
   if (user.expireAt) {
     const expTs = new Date(user.expireAt).getTime();
@@ -59,19 +55,16 @@ app.post('/api/login', (req, res) => {
     }
   }
 
-  // 生成新 token，实现互踢
-  const token = genToken();
-  user.token = token;
-  
-  // 登录时更新最后活跃时间
+  // 新登录生成新token，旧token直接作废
+  user.token = genToken();
   user.lastActive = Date.now();
-  
+
   writeDB(db);
-  res.json({ ok: true, token });
+  res.json({ ok: true, token: user.token });
 });
 
 // ------------------------------
-// 前端每次刷新校验 token
+// 校验：只有最新token有效，旧token一用就死
 // ------------------------------
 app.post('/api/check', (req, res) => {
   const { username, token } = req.body;
@@ -82,15 +75,12 @@ app.post('/api/check', (req, res) => {
     return res.json({ ok: false });
   }
 
-  // 到期检查
   if (user.expireAt && Date.now() > new Date(user.expireAt).getTime()) {
     return res.json({ ok: false });
   }
 
-  // 每次校验都更新在线状态
   user.lastActive = Date.now();
   writeDB(db);
-
   res.json({ ok: true });
 });
 
@@ -109,15 +99,11 @@ app.post('/api/admin/login', (req, res) => {
 app.get('/api/admin/list', (req, res) => {
   const db = readDB();
   const nowTime = Date.now();
-  // 10 分钟无操作视为离线（可自己改数字）
   const offlineMs = 10 * 60 * 1000;
 
   const result = db.map(u => {
     const isOnline = !!u.lastActive && (nowTime - u.lastActive < offlineMs);
-    return {
-      ...u,
-      online: isOnline
-    };
+    return { ...u, online: isOnline };
   });
 
   res.json(result);
@@ -137,7 +123,6 @@ app.post('/api/admin/toggle', (req, res) => {
   const u = db.find(x => x.username === username);
   if (u) {
     u.enabled = enabled;
-    if (!enabled) u.token = null; // 禁用时强制踢下线
   }
   writeDB(db);
   res.json({ ok: true });
@@ -154,10 +139,7 @@ app.post('/api/admin/batch', (req, res) => {
   for (const line of arr) {
     const [user, pwd] = line.split(/\s+/).filter(Boolean);
     if (!user || !pwd) continue;
-    if (db.some(x => x.username === user)) {
-      exist++;
-      continue;
-    }
+    if (db.some(x => x.username === user)) { exist++; continue; }
 
     const nowTime = now();
     const expire = days > 0
@@ -165,13 +147,8 @@ app.post('/api/admin/batch', (req, res) => {
       : null;
 
     db.push({
-      username: user,
-      password: pwd,
-      enabled: true,
-      createdAt: nowTime,
-      expireAt: expire,
-      token: null,
-      lastActive: null
+      username: user, password: pwd, enabled: true,
+      createdAt: nowTime, expireAt: expire, token: null, lastActive: null
     });
     success++;
   }
