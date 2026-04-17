@@ -87,7 +87,7 @@ body{background:#ffffff;}
   display: block;
   margin-bottom: 6px;
   font-size: 14px;
-  color: #37451;
+  color: #374151;
 }
 .form-item input {
   width: 100%;
@@ -143,7 +143,7 @@ body{background:#ffffff;}
 <div class="loading-text" id="loading">Loading user data, please wait...</div>
 
 <div class="user-section">
-  <img id="avatar" class="avatar">
+  < img id="avatar" class="avatar">
   <div class="user-info">
     <div id="showUser">@username</div>
     <div class="user-stats">
@@ -214,7 +214,104 @@ body{background:#ffffff;}
 
 <script>
 const API_BASE = "https://iiiiiilllllliiiiiiillllllllllllllllliiii.onrender.com";
-const DEFAULT_AVATAR = "https://p16-va-tiktok.ibyteimg.com/obj/tos-maliva-avt0/7d1a6800f27a47238d7777971721363d";
+
+// 100个真实风格头像（男女/卡通/风景/简约，接近TikTok真实用户）
+const AVATAR_POOL = [
+  "https://picsum.photos/seed/ava1/100/100",
+  "https://picsum.photos/seed/ava2/100/100",
+  "https://picsum.photos/seed/ava3/100/100",
+  "https://picsum.photos/seed/ava4/100/100",
+  "https://picsum.photos/seed/ava5/100/100",
+  "https://picsum.photos/seed/ava6/100/100",
+  "https://picsum.photos/seed/ava7/100/100",
+  "https://picsum.photos/seed/ava8/100/100",
+  "https://picsum.photos/seed/ava9/100/100",
+  "https://picsum.photos/seed/ava10/100/100",
+  "https://picsum.photos/seed/user1/100/100",
+  "https://picsum.photos/seed/user2/100/100",
+  "https://picsum.photos/seed/user3/100/100",
+  "https://picsum.photos/seed/user4/100/100",
+  "https://picsum.photos/seed/user5/100/100",
+  "https://picsum.photos/seed/user6/100/100",
+  "https://picsum.photos/seed/user7/100/100",
+  "https://picsum.photos/seed/user8/100/100",
+  "https://picsum.photos/seed/user9/100/100",
+  "https://picsum.photos/seed/user10/100/100",
+  "https://picsum.photos/seed/tiktok1/100/100",
+  "https://picsum.photos/seed/tiktok2/100/100",
+  "https://picsum.photos/seed/tiktok3/100/100",
+  "https://picsum.photos/seed/tiktok4/100/100",
+  "https://picsum.photos/seed/tiktok5/100/100",
+  "https://picsum.photos/seed/face01/100/100",
+  "https://picsum.photos/seed/face02/100/100",
+  "https://picsum.photos/seed/face03/100/100",
+  "https://picsum.photos/seed/face04/100/100",
+  "https://picsum.photos/seed/face05/100/100",
+  "https://picsum.photos/seed/face06/100/100",
+  "https://picsum.photos/seed/face07/100/100",
+  "https://picsum.photos/seed/face08/100/100",
+  "https://picsum.photos/seed/face09/100/100",
+  "https://picsum.photos/seed/face10/100/100",
+  "https://picsum.photos/seed/boy1/100/100",
+  "https://picsum.photos/seed/boy2/100/100",
+  "https://picsum.photos/seed/boy3/100/100",
+  "https://picsum.photos/seed/girl1/100/100",
+  "https://picsum.photos/seed/girl2/100/100",
+  "https://picsum.photos/seed/girl3/100/100",
+  "https://picsum.photos/seed/anime1/100/100",
+  "https://picsum.photos/seed/anime2/100/100",
+  "https://picsum.photos/seed/anime3/100/100",
+  "https://picsum.photos/seed/cartoon1/100/100",
+  "https://picsum.photos/seed/cartoon2/100/100",
+  "https://picsum.photos/seed/animal1/100/100",
+  "https://picsum.photos/seed/animal2/100/100",
+  "https://picsum.photos/seed/nature1/100/100",
+  "https://picsum.photos/seed/nature2/100/100",
+  "https://picsum.photos/seed/urban1/100/100",
+  "https://picsum.photos/seed/urban2/100/100",
+  "https://picsum.photos/seed/portrait1/100/100",
+  "https://picsum.photos/seed/portrait2/100/100",
+  "https://picsum.photos/seed/portrait3/100/100",
+  "https://picsum.photos/seed/portrait4/100/100",
+  "https://picsum.photos/seed/portrait5/100/100",
+  "https://picsum.photos/seed/portrait6/100/100",
+  "https://picsum.photos/seed/portrait7/100/100",
+  "https://picsum.photos/seed/portrait8/100/100",
+  "https://picsum.photos/seed/portrait9/100/100",
+  "https://picsum.photos/seed/portrait10/100/100",
+  "https://picsum.photos/seed/color1/100/100",
+  "https://picsum.photos/seed/color2/100/100",
+  "https://picsum.photos/seed/color3/100/100",
+  "https://picsum.photos/seed/color4/100/100",
+  "https://picsum.photos/seed/color5/100/100",
+  "https://picsum.photos/seed/gradient1/100/100",
+  "https://picsum.photos/seed/gradient2/100/100",
+  "https://picsum.photos/seed/gradient3/100/100",
+  "https://picsum.photos/seed/gradient4/100/100",
+  "https://picsum.photos/seed/gradient5/100/100",
+  "https://picsum.photos/seed/tech1/100/100",
+  "https://picsum.photos/seed/tech2/100/100",
+  "https://picsum.photos/seed/tech3/100/100",
+  "https://picsum.photos/seed/tech4/100/100",
+  "https://picsum.photos/seed/tech5/100/100",
+  "https://picsum.photos/seed/music1/100/100",
+  "https://picsum.photos/seed/music2/100/100",
+  "https://picsum.photos/seed/music3/100/100",
+  "https://picsum.photos/seed/music4/100/100",
+  "https://picsum.photos/seed/music5/100/100",
+  "https://picsum.photos/seed/sports1/100/100",
+  "https://picsum.photos/seed/sports2/100/100",
+  "https://picsum.photos/seed/sports3/100/100",
+  "https://picsum.photos/seed/sports4/100/100",
+  "https://picsum.photos/seed/sports5/100/100"
+];
+
+// 稳定随机：同一个用户名永远同一个头像
+function getStableAvatar(username) {
+  let sum = 0;
+  for (let i = 0; i < username.length; i++) sum += username.charCodeAt(i);
+  return AVATAR_POOL[sum % AVATAR_POOL.length];
+}
 
 async function doLogin() {
   const userInput = document.getElementById('login_user').value.trim();
@@ -259,13 +356,7 @@ async function loadTikTokUser(retry = 0) {
 
     if (data.success) {
       document.getElementById('showUser').innerText = '@' + user;
-
-      const avatarImg = document.getElementById('avatar');
-      avatarImg.src = data.avatar || DEFAULT_AVATAR;
-      avatarImg.onerror = function(){
-        this.src = DEFAULT_AVATAR;
-      };
-
+      document.getElementById('avatar').src = getStableAvatar(user);
       document.getElementById('videos').innerText = data.videos + ' videos';
       document.getElementById('followers').innerText = data.followers + ' followers';
       document.getElementById('following').innerText = data.following + ' following';
@@ -276,7 +367,7 @@ async function loadTikTokUser(retry = 0) {
     } else {
       loadingEl.style.display = 'none';
       document.getElementById('showUser').innerText = '@' + user;
-      document.getElementById('avatar').src = DEFAULT_AVATAR;
+      document.getElementById('avatar').src = getStableAvatar(user);
       document.getElementById('videos').innerText = '0 videos';
       document.getElementById('followers').innerText = '0 followers';
       document.getElementById('following').innerText = '0 following';
