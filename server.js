@@ -30,7 +30,7 @@ function genToken() {
 }
 
 // ------------------------------
-// 登录 → 新token覆盖旧token（A被顶）
+// 登录：永远只保留【最后一次登录的token】
 // ------------------------------
 app.post('/api/login', (req, res) => {
   const { username, password } = req.body;
@@ -55,23 +55,23 @@ app.post('/api/login', (req, res) => {
     }
   }
 
-  // 新登录生成新token，旧token直接作废
-  user.token = genToken();
+  // 关键：每次登录都生成新token，覆盖旧的 → 永远只有最后登录有效
+  user.latestToken = genToken();
   user.lastActive = Date.now();
 
   writeDB(db);
-  res.json({ ok: true, token: user.token });
+  res.json({ ok: true, token: user.latestToken });
 });
 
 // ------------------------------
-// 校验：只有最新token有效，旧token一用就死
+// 校验：只认 latestToken
 // ------------------------------
 app.post('/api/check', (req, res) => {
   const { username, token } = req.body;
   const db = readDB();
   const user = db.find(u => u.username === username);
 
-  if (!user || !user.enabled || !user.token || user.token !== token) {
+  if (!user || !user.enabled || !user.latestToken || user.latestToken !== token) {
     return res.json({ ok: false });
   }
 
@@ -85,7 +85,7 @@ app.post('/api/check', (req, res) => {
 });
 
 // ------------------------------
-// 管理员
+// 管理员功能完全保留
 // ------------------------------
 app.post('/api/admin/login', (req, res) => {
   const { user, pwd } = req.body;
@@ -148,7 +148,7 @@ app.post('/api/admin/batch', (req, res) => {
 
     db.push({
       username: user, password: pwd, enabled: true,
-      createdAt: nowTime, expireAt: expire, token: null, lastActive: null
+      createdAt: nowTime, expireAt: expire, latestToken: null, lastActive: null
     });
     success++;
   }
