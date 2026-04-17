@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
+const fetch = require('node-fetch');
 
 const app = express();
 const PORT = process.env.PORT || 10000;
@@ -10,7 +11,7 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// 1. 数据库初始化（关键！）
+// 数据库初始化
 const db = new sqlite3.Database('./users.db', (err) => {
   if (err) {
     console.error('Database connection error:', err.message);
@@ -19,7 +20,7 @@ const db = new sqlite3.Database('./users.db', (err) => {
   }
 });
 
-// 2. 创建用户表（关键！）
+// 创建用户表
 db.run(`CREATE TABLE IF NOT EXISTS users (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   username TEXT UNIQUE NOT NULL,
@@ -34,7 +35,7 @@ db.run(`CREATE TABLE IF NOT EXISTS users (
   }
 });
 
-// 3. 插入默认账号（关键！）
+// 插入默认账号
 db.get('SELECT * FROM users WHERE username = ?', ['admin'], (err, row) => {
   if (!row) {
     console.log('Inserting default admin user...');
@@ -85,6 +86,26 @@ app.post('/api/admin/add', (req, res) => {
   const { username, password, expire } = req.body;
   db.run('INSERT INTO users (username,password,expire) VALUES (?,?,?)',
     [username, password, expire], () => res.json({ ok: true }));
+});
+
+// 头像代理接口（解决跨域问题，保留真实头像）
+app.get('/proxy/avatar', async (req, res) => {
+  const avatarUrl = req.query.url;
+  const DEFAULT_AVATAR = "https://p16-va-tiktok.ibyteimg.com/obj/tos-maliva-avt0/7d1a6800f27a47238d7777971721363d";
+
+  if (!avatarUrl) return res.redirect(DEFAULT_AVATAR);
+
+  try {
+    const response = await fetch(avatarUrl);
+    if (!response.ok) throw new Error('Invalid image');
+
+    const buffer = await response.arrayBuffer();
+    res.setHeader('Content-Type', response.headers.get('content-type') || 'image/jpeg');
+    res.send(Buffer.from(buffer));
+  } catch (err) {
+    console.error('Avatar proxy error:', err.message);
+    res.redirect(DEFAULT_AVATAR);
+  }
 });
 
 // 静态页面
