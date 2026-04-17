@@ -10,55 +10,37 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// 数据库初始化
 const db = new sqlite3.Database('./users.db', (err) => {
-  if (err) {
-    console.error('Database connection error:', err.message);
-  } else {
-    console.log('✅ Database connected');
-  }
+  if (err) console.error('DB error:', err.message);
+  else console.log('✅ Database connected');
 });
 
-// 创建用户表
 db.run(`CREATE TABLE IF NOT EXISTS users (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   username TEXT UNIQUE NOT NULL,
   password TEXT NOT NULL,
   expire TEXT NOT NULL,
   banned INTEGER DEFAULT 0
-)`, (err) => {
-  if (err) {
-    console.error('Create table error:', err.message);
-  } else {
-    console.log('✅ Users table ready');
-  }
-});
+)`);
 
-// 插入默认账号
 db.get('SELECT * FROM users WHERE username = ?', ['admin'], (err, row) => {
   if (!row) {
-    console.log('Inserting default admin user...');
     db.run(`INSERT INTO users (username,password,expire,banned) VALUES ('admin','admin888','2027-12-31',0)`);
     db.run(`INSERT INTO users (username,password,expire,banned) VALUES ('test','test123','2027-12-31',0)`);
-    console.log('✅ Default users created');
   }
 });
 
-// 登录接口
 app.post('/api/login', (req, res) => {
   const { username, password } = req.body;
   db.get('SELECT * FROM users WHERE username = ?', [username], (err, user) => {
     if (!user) return res.json({ ok: false, msg: 'User not found' });
     if (user.banned) return res.json({ ok: false, msg: 'Account disabled' });
-    const now = new Date();
-    const exp = new Date(user.expire);
-    if (now > exp) return res.json({ ok: false, msg: 'Account expired' });
+    if (new Date() > new Date(user.expire)) return res.json({ ok: false, msg: 'Account expired' });
     if (user.password !== password) return res.json({ ok: false, msg: 'Wrong password' });
     res.json({ ok: true });
   });
 });
 
-// 管理员接口
 app.get('/api/admin/users', (req, res) => {
   db.all('SELECT * FROM users', (err, rows) => res.json(rows));
 });
@@ -87,7 +69,6 @@ app.post('/api/admin/add', (req, res) => {
     [username, password, expire], () => res.json({ ok: true }));
 });
 
-// 静态页面
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public/index.html'));
 });
