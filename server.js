@@ -2,7 +2,6 @@ const express = require('express');
 const cors = require('cors');
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
-const fetch = require('node-fetch');
 
 const app = express();
 const PORT = process.env.PORT || 10000;
@@ -86,26 +85,6 @@ app.post('/api/admin/add', (req, res) => {
   const { username, password, expire } = req.body;
   db.run('INSERT INTO users (username,password,expire) VALUES (?,?,?)',
     [username, password, expire], () => res.json({ ok: true }));
-});
-
-// 头像代理接口（解决跨域问题，保留真实头像）
-app.get('/proxy/avatar', async (req, res) => {
-  const avatarUrl = req.query.url;
-  const DEFAULT_AVATAR = "https://p16-va-tiktok.ibyteimg.com/obj/tos-maliva-avt0/7d1a6800f27a47238d7777971721363d";
-
-  if (!avatarUrl) return res.redirect(DEFAULT_AVATAR);
-
-  try {
-    const response = await fetch(avatarUrl);
-    if (!response.ok) throw new Error('Invalid image');
-
-    const buffer = await response.arrayBuffer();
-    res.setHeader('Content-Type', response.headers.get('content-type') || 'image/jpeg');
-    res.send(Buffer.from(buffer));
-  } catch (err) {
-    console.error('Avatar proxy error:', err.message);
-    res.redirect(DEFAULT_AVATAR);
-  }
 });
 
 // 静态页面
