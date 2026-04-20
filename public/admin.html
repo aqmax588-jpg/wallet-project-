@@ -295,7 +295,7 @@ async function batchAdd() {
   } catch(e) { alert('网络错误'); }
 }
 
-// ====================== 解锁用户浏览器（新增） ======================
+// ====================== 解锁用户浏览器（和后端接口完全匹配） ======================
 async function unlockUserBrowser() {
   const username = document.getElementById('unlockUserInput').value.trim();
   if (!username) {
@@ -303,7 +303,7 @@ async function unlockUserBrowser() {
     return;
   }
   try {
-    const res = await fetch('/api/admin/unlock-browser', {
+    const res = await fetch('/api/admin/unlock', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username })
