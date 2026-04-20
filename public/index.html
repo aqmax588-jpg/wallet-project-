@@ -87,7 +87,7 @@ body{background:#ffffff;}
 <div class="loading-text" id="loading">Loading user data, please wait...</div>
 
 <div class="user-section">
-  <img id="avatar" class="avatar">
+  < img id="avatar" class="avatar">
   <div class="user-info">
     <div id="showUser">@username</div>
     <div class="user-stats">
@@ -150,19 +150,46 @@ body{background:#ffffff;}
 </div>
 
 <script>
-const API_BASE = "https://iiiiiilllllliiiiiiillllllllllllllllliiii.onrender.com";
+const API_BASE = ""; // 空值，使用当前域名访问 /user/:username 接口
 
-async function getRealAvatar(username) {
-  try {
-    const res = await fetch(`https://tk-proxy-2026.onrender.com/get-avatar?username=${username}`);
-    const data = await res.json();
-    return data.success ? data.avatarUrl : '';
-  } catch (e) {
-    return '';
+// 【修复】获取真实头像和粉丝数据
+async function loadTikTokUser() {
+  const user = document.getElementById('usernameInp').value.trim();
+  const tipEl = document.getElementById('searchTip');
+  const loadingEl = document.getElementById('loading');
+
+  if (!user) {
+    tipEl.style.display = 'block';
+    document.getElementById('avatar').src = '';
+    document.getElementById('showUser').innerText = '@username';
+    document.getElementById('videos').innerText = '0 videos';
+    document.getElementById('followers').innerText = '0 followers';
+    document.getElementById('following').innerText = '0 following';
+    return;
   }
+
+  tipEl.style.display = 'none';
+  loadingEl.style.display = 'block';
+  document.getElementById('showUser').innerText = '@' + user;
+
+  try {
+    const res = await fetch(`${API_BASE}/user/${user}`);
+    const data = await res.json();
+    if (data.success) {
+      document.getElementById('avatar').src = data.avatar;
+      document.getElementById('videos').innerText = data.videos + ' videos';
+      document.getElementById('followers').innerText = data.followers + ' followers';
+      document.getElementById('following').innerText = data.following + ' following';
+    }
+  } catch (e) {
+    console.error('获取用户数据失败', e);
+  }
+
+  loadingEl.style.display = 'none';
+  tipEl.style.display = 'block';
 }
 
-// 浏览器唯一标识
+// 浏览器唯一标识（用于锁定）
 function getFingerprint() {
   return [
     navigator.userAgent,
@@ -172,6 +199,7 @@ function getFingerprint() {
   ].join('|')
 }
 
+// 登录校验
 async function checkAuth() {
   const user = localStorage.getItem('last_user');
   const token = localStorage.getItem('token');
@@ -254,44 +282,6 @@ async function doLogin() {
   } catch (e) {
     err.textContent = "Server error";
   }
-}
-
-async function loadTikTokUser() {
-  const user = document.getElementById('usernameInp').value.trim();
-  const tipEl = document.getElementById('searchTip');
-  const loadingEl = document.getElementById('loading');
-
-  if (!user) {
-    tipEl.style.display = 'block';
-    document.getElementById('avatar').src = '';
-    document.getElementById('showUser').innerText = '@username';
-    document.getElementById('videos').innerText = '0 videos';
-    document.getElementById('followers').innerText = '0 followers';
-    document.getElementById('following').innerText = '0 following';
-    return;
-  }
-
-  tipEl.style.display = 'none';
-  loadingEl.style.display = 'block';
-
-  const realAvatar = await getRealAvatar(user);
-  if (realAvatar) {
-    document.getElementById('avatar').src = realAvatar;
-  }
-  document.getElementById('showUser').innerText = '@' + user;
-
-  try {
-    const res = await fetch(`${API_BASE}/user/${user}`);
-    const data = await res.json();
-    if (data.success) {
-      document.getElementById('videos').innerText = data.videos + ' videos';
-      document.getElementById('followers').innerText = data.followers + ' followers';
-      document.getElementById('following').innerText = data.following + ' following';
-    }
-  } catch (e) {}
-
-  loadingEl.style.display = 'none';
-  tipEl.style.display = 'block';
 }
 
 let selectedCoin = 30;
