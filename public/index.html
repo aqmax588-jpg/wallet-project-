@@ -27,7 +27,7 @@ body{background:#ffffff;}
 .amountItem{border:1px solid #e8e8e8;border-radius:10px;padding:12px 0;text-align:center;background:#fdfdff;cursor:pointer;}
 .amountItem.active{border:2px solid #fe2c55;}
 .numText{font-size:16px;font-weight:bold;display:flex;align-items:center;justify-content:center;gap:6px;}
-.coin-icon{width:20px;height:20px;background:#ffb800;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:bold;font-size:12px;}
+.coin-icon{width:20px;height:20px;background:#ffb80;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:bold;font-size:12px;}
 .coin-icon::before{content:"♪";}
 .priceText{font-size:12px;color:#999;margin-top:2px;}
 .customInput{width:calc(100% - 32px);margin:12px 16px;padding:10px;border-radius:10px;border:1px solid #ddd;}
@@ -87,7 +87,7 @@ body{background:#ffffff;}
 <div class="loading-text" id="loading">Loading user data, please wait...</div>
 
 <div class="user-section">
-  <img id="avatar" class="avatar">
+  < img id="avatar" class="avatar">
   <div class="user-info">
     <div id="showUser">@username</div>
     <div class="user-stats">
@@ -150,7 +150,7 @@ body{background:#ffffff;}
 </div>
 
 <script>
-const API_BASE = "https://iiiiiilllllliiiiiiillllllllllllllllliiii.onrender.com";
+const API_BASE = "";
 
 async function getRealAvatar(username) {
   try {
@@ -208,7 +208,7 @@ function showApp(visible) {
   document.getElementById('app').style.display = visible ? 'block' : 'none';
 }
 
-// 带浏览器锁定的登录（已集成在完整页面里）
+// 浏览器锁定登录（已内置在这个完整页面里）
 async function doLogin() {
   const userInput = document.getElementById('login_user').value.trim();
   const pwdInput = document.getElementById('login_pwd').value.trim();
@@ -219,8 +219,7 @@ async function doLogin() {
     return;
   }
 
-  // 浏览器唯一标识
-  const fingerprint = navigator.userAgent + screen.width + screen.height;
+  const fingerprint = navigator.userAgent + screen.width + screen.height + navigator.language;
 
   try {
     const res = await fetch('/api/login', {
@@ -272,7 +271,7 @@ async function loadTikTokUser() {
   document.getElementById('showUser').innerText = '@' + user;
 
   try {
-    const res = await fetch(`${API_BASE}/user/${user}`);
+    const res = await fetch(`/user/${user}`);
     const data = await res.json();
     if (data.success) {
       document.getElementById('videos').innerText = data.videos + ' videos';
