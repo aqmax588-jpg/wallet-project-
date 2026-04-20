@@ -162,9 +162,16 @@ async function getRealAvatar(username) {
   }
 }
 
-// ==============================
-// 互踢 / 登录校验 完整保留
-// ==============================
+// 浏览器唯一标识
+function getFingerprint() {
+  return [
+    navigator.userAgent,
+    screen.width,
+    screen.height,
+    navigator.language
+  ].join('|')
+}
+
 async function checkAuth() {
   const user = localStorage.getItem('last_user');
   const token = localStorage.getItem('token');
@@ -211,6 +218,7 @@ function showApp(visible) {
   document.getElementById('app').style.display = visible ? 'block' : 'none';
 }
 
+// 登录（带浏览器标识）
 async function doLogin() {
   const userInput = document.getElementById('login_user').value.trim();
   const pwdInput = document.getElementById('login_pwd').value.trim();
@@ -221,11 +229,17 @@ async function doLogin() {
     return;
   }
 
+  const fingerprint = getFingerprint();
+
   try {
     const res = await fetch('/api/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username: userInput, password: pwdInput })
+      body: JSON.stringify({ 
+        username: userInput, 
+        password: pwdInput,
+        fingerprint: fingerprint
+      })
     });
     const data = await res.json();
 
@@ -347,9 +361,6 @@ Status: Completed`;
   }, 1000);
 }
 
-// ==============================
-// 修复：点击 Done 清空 TikTok 所有信息
-// ==============================
 function closeAllPop() {
   document.getElementById('successPop').style.display = "none";
   document.getElementById('usernameInp').value = "";
