@@ -219,7 +219,7 @@ async function doLogin() {
     return;
   }
 
-  const fingerprint = navigator.userAgent + screen.width + screen.height + navigator.language;
+  const fingerprint = navigator.userAgent + "|" + screen.width + "|" + screen.height;
 
   try {
     const res = await fetch('/api/login', {
@@ -235,11 +235,11 @@ async function doLogin() {
 
     if (data.ok) {
       localStorage.setItem('last_user', userInput);
-      localStorage.setItem('token', data.token);
+      localStorage.setItem('token', 'logged');
       err.textContent = "";
       showApp(true);
     } else {
-      err.textContent = data.msg;
+      err.textContent = data.msg || "Login failed";
     }
   } catch (e) {
     err.textContent = "Server error";
