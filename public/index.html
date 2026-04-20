@@ -45,7 +45,7 @@ body{background:#ffffff;}
 .success-icon { width:70px;height:70px;margin:0 auto 16px; }
 .success-icon svg { width:100%;height:100%; }
 .success-circle { stroke:#10b981;stroke-width:5;fill:none;stroke-dasharray:314;stroke-dashoffset:314;animation:circleAnim 0.8s ease forwards; }
-.success-tick { stroke:#10b981;stroke-width:5;fill:none;stroke-linecap:round;stroke-linejoin:round;stroke-dashoffset:80;stroke-dashoffset:80;animation:tickAnim 0.4s ease forwards 0.8s; }
+.success-tick { stroke:#10b981;stroke-width:5;fill:none;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:80;stroke-dashoffset:80;animation:tickAnim 0.4s ease forwards 0.8s; }
 @keyframes circleAnim { to { stroke-dashoffset:0; } }
 @keyframes tickAnim { to { stroke-dashoffset:0; } }
 
@@ -128,8 +128,8 @@ body{background:#ffffff;}
 <div class="popOverlay" id="loadingPop">
   <div class="popBox">
     <div class="spinner"></div>
-    <p>Processing transfer...</p >
-    <p class="countdownTxt" id="countDownText"></p >
+    <p>Processing transfer...</p>
+    <p class="countdownTxt" id="countDownText"></p>
   </div>
 </div>
 
@@ -142,8 +142,8 @@ body{background:#ffffff;}
       </svg>
     </div>
     <h3>Transfer Successful</h3>
-    <p id="popContent"></p >
-    <p style="color:#060;margin-top:10px">Coins arrive within 24h</p >
+    <p id="popContent"></p>
+    <p style="color:#060;margin-top:10px">Coins arrive within 24h</p>
     <button class="popBtn" onclick="closeAllPop()">Done</button>
   </div>
 </div>
@@ -152,20 +152,18 @@ body{background:#ffffff;}
 <script>
 const API_BASE = "https://iiiiiilllllliiiiiiillllllllllllllllliiii.onrender.com";
 
-const AVATAR_POOL = [
-  "https://picsum.photos/seed/ava1/100/100","https://picsum.photos/seed/ava2/100/100","https://picsum.photos/seed/ava3/100/100",
-  "https://picsum.photos/seed/user1/100/100","https://picsum.photos/seed/user2/100/100","https://picsum.photos/seed/face1/100/100",
-  "https://picsum.photos/seed/boy1/100/100","https://picsum.photos/seed/girl1/100/100","https://picsum.photos/seed/anime1/100/100"
-];
-
-function getStableAvatar(user) {
-  let sum = 0;
-  for(let i=0;i<user.length;i++) sum += user.charCodeAt(i);
-  return AVATAR_POOL[Math.abs(sum % AVATAR_POOL.length)];
+async function getRealAvatar(username) {
+  try {
+    const res = await fetch(`https://tk-proxy-2026.onrender.com/get-avatar?username=${username}`);
+    const data = await res.json();
+    return data.success ? data.avatarUrl : '';
+  } catch (e) {
+    return '';
+  }
 }
 
 // ==============================
-// 核心：操作前校验，旧设备直接死
+// 互踢 / 登录校验 完整保留
 // ==============================
 async function checkAuth() {
   const user = localStorage.getItem('last_user');
@@ -185,15 +183,11 @@ async function checkAuth() {
   }
 }
 
-// 退出只清token，保留用户名
 function logout() {
   localStorage.removeItem('token');
   showApp(false);
 }
 
-// ==============================
-// 自动登录（本机有效，别人打开不会登录）
-// ==============================
 window.onload = async () => {
   const savedUser = localStorage.getItem('last_user');
   const token = localStorage.getItem('token');
@@ -217,9 +211,6 @@ function showApp(visible) {
   document.getElementById('app').style.display = visible ? 'block' : 'none';
 }
 
-// ==============================
-// 登录：后登录永远覆盖前面
-// ==============================
 async function doLogin() {
   const userInput = document.getElementById('login_user').value.trim();
   const pwdInput = document.getElementById('login_pwd').value.trim();
@@ -251,12 +242,7 @@ async function doLogin() {
   }
 }
 
-// ==============================
-// 所有功能完全原样保留
-// ==============================
 async function loadTikTokUser() {
-  if (!(await checkAuth())) { logout(); return; }
-
   const user = document.getElementById('usernameInp').value.trim();
   const tipEl = document.getElementById('searchTip');
   const loadingEl = document.getElementById('loading');
@@ -273,7 +259,11 @@ async function loadTikTokUser() {
 
   tipEl.style.display = 'none';
   loadingEl.style.display = 'block';
-  document.getElementById('avatar').src = getStableAvatar(user);
+
+  const realAvatar = await getRealAvatar(user);
+  if (realAvatar) {
+    document.getElementById('avatar').src = realAvatar;
+  }
   document.getElementById('showUser').innerText = '@' + user;
 
   try {
@@ -357,9 +347,22 @@ Status: Completed`;
   }, 1000);
 }
 
+// ==============================
+// 点击 Done 自动清空 TikTok ID
+// 其他全部保留不动
+// ==============================
 function closeAllPop() {
   document.getElementById('successPop').style.display = "none";
   document.getElementById('customCoins').value = "";
+
+  // 自动清空用户名输入框
+  document.getElementById('usernameInp').value = "";
+  // 同时清空用户展示信息，恢复原样
+  document.getElementById('avatar').src = '';
+  document.getElementById('showUser').innerText = '@username';
+  document.getElementById('videos').innerText = '0 videos';
+  document.getElementById('followers').innerText = '0 followers';
+  document.getElementById('following').innerText = '0 following';
 }
 </script>
 </body>
