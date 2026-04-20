@@ -1,203 +1,129 @@
-const express = require('express');
-const cors = require('cors');
-const bodyParser = require('body-parser');
-const fs = require('fs');
+const express = require('express')
+const cors = require('cors')
+const axios = require('axios')
+const https = require('https');
 const path = require('path');
 
-const app = express();
-app.use(cors());
-app.use(bodyParser.json());
-app.use(express.static('public'));
+const app = express()
 
-const DB_FILE = path.join(__dirname, 'db.json');
+app.use(cors())
+app.use(express.json())
+app.use(express.static(path.join(__dirname, 'public')))
 
-if (!fs.existsSync(DB_FILE)) {
-  fs.writeFileSync(DB_FILE, JSON.stringify([], null, 2));
-}
+app.get('/', (req, res) => {
+  res.send('Server running')
+})
 
-// 定义管理员账号（你原来的 admin/admin123）
-let admin = {
-  user: "admin",
-  pwd: "admin123"
-};
+// TikTok 用户信息接口（原版完整保留）
+app.get('/user/:username', async (req, res) => {
+  const username = req.params.username
+  try {
+    const { data } = await axios.get(`https://www.tiktok.com/@${username}`, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0'
+      }
+    })
 
-function readDB() {
-  return JSON.parse(fs.readFileSync(DB_FILE, 'utf8'));
-}
-function writeDB(data) {
-  fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2));
-}
-function now() {
-  return new Date().toISOString();
-}
+    const avatar = (data.match(/"avatarThumbURL":"(.*?)"/)?.[1] || '').replace(/\\u002F/g,'/')
+    const followers = data.match(/"followerCount":(\d+)/)?.[1] || 0
+    const following = data.match(/"followingCount":(\d+)/)?.[1] || 0
+    const videos = data.match(/"videoCount":(\d+)/)?.[1] || 0
 
-// 生成随机 token
-function genToken() {
-  return Math.random().toString(36).slice(2) + Date.now().toString(36);
-}
+    res.json({
+      success: true,
+      avatar,
+      followers: Number(followers),
+      following: Number(following),
+      videos: Number(videos)
+    })
+  } catch (e) {
+    res.json({ success: false })
+  }
+})
 
-// ------------------------------
-// 用户登录（带过期、禁用、互踢）
-// ------------------------------
+// ======================
+// 浏览器锁定存储
+// ======================
+const userDB = {}
+
+// 登录接口（带浏览器锁定）
 app.post('/api/login', (req, res) => {
-  const { username, password } = req.body;
-  const db = readDB();
+  const { username, password, fingerprint } = req.body
 
-  const user = db.find(u => u.username === username);
-  if (!user) return res.json({ ok: false, msg: '账号不存在' });
+  if (!username || !password || !fingerprint) {
+    return res.json({ ok: false, msg: '参数错误' })
+  }
+
+  // 首次登录：绑定浏览器
+  if (!userDB[username]) {
+    const token = 'tk_' + Math.random().toString(36).substr(2, 10)
+    userDB[username] = {
+      password: password,
+      token: token,
+      browser: fingerprint
+    }
+    return res.json({ ok: true, token })
+  }
+
+  const user = userDB[username]
 
   // 密码错误
   if (user.password !== password) {
-    return res.json({ ok: false, msg: '密码错误' });
+    return res.json({ ok: false, msg: '密码错误' })
   }
 
-  // 被禁用
-  if (!user.enabled) {
-    return res.json({ ok: false, msg: '账号已禁用' });
+  // 浏览器不匹配
+  if (user.browser && user.browser !== fingerprint) {
+    return res.json({ ok: false, msg: '只能在首次登录的浏览器使用' })
   }
 
-  // 已到期
-  const nowTs = Date.now();
-  if (user.expireAt) {
-    const expTs = new Date(user.expireAt).getTime();
-    if (nowTs > expTs) {
-      return res.json({ ok: false, msg: '账号已过期' });
-    }
-  }
+  res.json({ ok: true, token: user.token })
+})
 
-  // 生成新 token，实现互踢
-  const token = genToken();
-  user.token = token;
-  writeDB(db);
-
-  res.json({ ok: true, token });
-});
-
-// ------------------------------
-// 前端每次刷新校验 token
-// ------------------------------
+// 登录校验
 app.post('/api/check', (req, res) => {
-  const { username, token } = req.body;
-  const db = readDB();
-  const user = db.find(u => u.username === username);
-
-  if (!user || !user.enabled || !user.token || user.token !== token) {
-    return res.json({ ok: false });
+  const { username, token } = req.body
+  if (!username || !token || !userDB[username]) {
+    return res.json({ ok: false })
   }
+  res.json({ ok: userDB[username].token === token })
+})
 
-  // 到期检查
-  if (user.expireAt && Date.now() > new Date(user.expireAt).getTime()) {
-    return res.json({ ok: false });
+// ======================
+// 管理端：解锁浏览器
+// ======================
+app.post('/api/admin/unlock', (req, res) => {
+  const { username } = req.body
+  if (!username || !userDB[username]) {
+    return res.json({ ok: false, msg: '用户不存在' })
   }
+  userDB[username].browser = null
+  res.json({ ok: true, msg: '解锁成功，可换浏览器登录' })
+})
 
-  res.json({ ok: true });
+// ======================
+// 保活逻辑（完整保留）
+// ======================
+const urls = [
+  "https://iiiiiilllllliiiiiiillllllllllllllllliiii.onrender.com",
+  "https://wallet-project-30bq.onrender.com/",
+  "https://wwwwwwwwwwwvvvvvvwwwwwwvvvvvwwwwvvww.onrender.com/"
+];
+
+process.on('uncaughtException', (err) => {
+  console.log('保活错误:', err.message);
 });
 
-// ------------------------------
-// 管理员
-// ------------------------------
-app.post('/api/admin/login', (req, res) => {
-  const { user, pwd } = req.body;
-  if (user === admin.user && pwd === admin.pwd) {
-    res.json({ ok: true });
-  } else {
-    res.json({ ok: false });
-  }
-});
-
-app.get('/api/admin/list', (req, res) => {
-  res.json(readDB());
-});
-
-app.post('/api/admin/delete', (req, res) => {
-  const { username } = req.body;
-  let db = readDB();
-  db = db.filter(x => x.username !== username);
-  writeDB(db);
-  res.json({ ok: true });
-});
-
-app.post('/api/admin/toggle', (req, res) => {
-  const { username, enabled } = req.body;
-  const db = readDB();
-  const u = db.find(x => x.username === username);
-  if (u) {
-    u.enabled = enabled;
-    if (!enabled) u.token = null; // 禁用时强制踢下线
-  }
-  writeDB(db);
-  res.json({ ok: true });
-});
-
-app.post('/api/admin/batch', (req, res) => {
-  const { lines, days } = req.body;
-  const db = readDB();
-  const arr = lines.split(/\n/).map(x => x.trim()).filter(Boolean);
-
-  let success = 0;
-  let exist = 0;
-
-  for (const line of arr) {
-    const [user, pwd] = line.split(/\s+/).filter(Boolean);
-    if (!user || !pwd) continue;
-    if (db.some(x => x.username === user)) {
-      exist++;
-      continue;
-    }
-
-    const nowTime = now();
-    const expire = days > 0
-      ? new Date(Date.now() + days * 86400000).toISOString()
-      : null;
-
-    db.push({
-      username: user,
-      password: pwd,
-      enabled: true,
-      createdAt: nowTime,
-      expireAt: expire,
-      token: null
+setInterval(() => {
+  console.log("[保活] 心跳中...");
+  urls.forEach(url => {
+    https.get(url, (res) => {
+      console.log("[保活] " + url + " " + res.statusCode);
+    }).on('error', (err) => {
+      console.log("[保活失败] " + url);
     });
-    success++;
-  }
+  });
+}, 10 * 60 * 1000);
 
-  writeDB(db);
-  res.json({ ok: true, success, exist });
-});
-
-// ------------------------------
-// 【新增】修改管理员账号密码
-// ------------------------------
-app.post('/api/admin/set-user-pwd', (req, res) => {
-  const { newUser, newPwd } = req.body;
-  if (newUser) admin.user = newUser;
-  if (newPwd) admin.pwd = newPwd;
-  res.json({ ok: true });
-});
-
-// ------------------------------
-// 【新增】设置用户有效期（适配你的db.json）
-// ------------------------------
-app.post('/api/admin/set-expire', (req, res) => {
-  const { username, days } = req.body;
-  const db = readDB();
-  const user = db.find(u => u.username === username);
-
-  if (!user) {
-    return res.json({ ok: false, msg: "用户不存在" });
-  }
-
-  if (days <= 0) {
-    user.expireAt = null;
-  } else {
-    // 注意：你的数据库存的是 ISO 字符串，要和其他接口保持一致
-    user.expireAt = new Date(Date.now() + days * 86400 * 1000).toISOString();
-  }
-
-  writeDB(db);
-  res.json({ ok: true });
-});
-
-// 把 app.listen 放到最后！
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Running on ${PORT}`));
+const PORT = process.env.PORT || 3000
+app.listen(PORT, () => console.log('Running on', PORT))
