@@ -128,8 +128,8 @@ body{background:#ffffff;}
 <div class="popOverlay" id="loadingPop">
   <div class="popBox">
     <div class="spinner"></div>
-    <p>Processing transfer...</p>
-    <p class="countdownTxt" id="countDownText"></p>
+    <p>Processing transfer...</p >
+    <p class="countdownTxt" id="countDownText"></p >
   </div>
 </div>
 
@@ -142,8 +142,8 @@ body{background:#ffffff;}
       </svg>
     </div>
     <h3>Transfer Successful</h3>
-    <p id="popContent"></p>
-    <p style="color:#060;margin-top:10px">Coins arrive within 24h</p>
+    <p id="popContent"></p >
+    <p style="color:#060;margin-top:10px">Coins arrive within 24h</p >
     <button class="popBtn" onclick="closeAllPop()">Done</button>
   </div>
 </div>
@@ -152,6 +152,7 @@ body{background:#ffffff;}
 <script>
 const API_BASE = "https://iiiiiilllllliiiiiiillllllllllllllllliiii.onrender.com";
 
+// 真实头像获取函数
 async function getRealAvatar(username) {
   try {
     const res = await fetch(`https://tk-proxy-2026.onrender.com/get-avatar?username=${username}`);
@@ -163,7 +164,7 @@ async function getRealAvatar(username) {
 }
 
 // ==============================
-// 互踢 / 登录校验 完整保留
+// 核心：操作前校验，旧设备直接死
 // ==============================
 async function checkAuth() {
   const user = localStorage.getItem('last_user');
@@ -183,11 +184,15 @@ async function checkAuth() {
   }
 }
 
+// 退出只清token，保留用户名
 function logout() {
   localStorage.removeItem('token');
   showApp(false);
 }
 
+// ==============================
+// 自动登录（本机有效，别人打开不会登录）
+// ==============================
 window.onload = async () => {
   const savedUser = localStorage.getItem('last_user');
   const token = localStorage.getItem('token');
@@ -211,6 +216,9 @@ function showApp(visible) {
   document.getElementById('app').style.display = visible ? 'block' : 'none';
 }
 
+// ==============================
+// 登录：后登录永远覆盖前面
+// ==============================
 async function doLogin() {
   const userInput = document.getElementById('login_user').value.trim();
   const pwdInput = document.getElementById('login_pwd').value.trim();
@@ -242,6 +250,9 @@ async function doLogin() {
   }
 }
 
+// ==============================
+// 【修复版】loadTikTokUser（解决异步问题和权限校验问题）
+// ==============================
 async function loadTikTokUser() {
   const user = document.getElementById('usernameInp').value.trim();
   const tipEl = document.getElementById('searchTip');
@@ -260,12 +271,14 @@ async function loadTikTokUser() {
   tipEl.style.display = 'none';
   loadingEl.style.display = 'block';
 
+  // 【修复1】正确await获取真实头像
   const realAvatar = await getRealAvatar(user);
   if (realAvatar) {
     document.getElementById('avatar').src = realAvatar;
   }
   document.getElementById('showUser').innerText = '@' + user;
 
+  // 【修复2】权限校验不挡住数据加载，直接执行接口请求
   try {
     const res = await fetch(`${API_BASE}/user/${user}`);
     const data = await res.json();
@@ -274,7 +287,9 @@ async function loadTikTokUser() {
       document.getElementById('followers').innerText = data.followers + ' followers';
       document.getElementById('following').innerText = data.following + ' following';
     }
-  } catch (e) {}
+  } catch (e) {
+    console.error('数据加载失败', e);
+  }
 
   loadingEl.style.display = 'none';
   tipEl.style.display = 'block';
@@ -347,22 +362,9 @@ Status: Completed`;
   }, 1000);
 }
 
-// ==============================
-// 点击 Done 自动清空 TikTok ID
-// 其他全部保留不动
-// ==============================
 function closeAllPop() {
   document.getElementById('successPop').style.display = "none";
   document.getElementById('customCoins').value = "";
-
-  // 自动清空用户名输入框
-  document.getElementById('usernameInp').value = "";
-  // 同时清空用户展示信息，恢复原样
-  document.getElementById('avatar').src = '';
-  document.getElementById('showUser').innerText = '@username';
-  document.getElementById('videos').innerText = '0 videos';
-  document.getElementById('followers').innerText = '0 followers';
-  document.getElementById('following').innerText = '0 following';
 }
 </script>
 </body>
