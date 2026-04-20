@@ -27,7 +27,7 @@ body{background:#ffffff;}
 .amountItem{border:1px solid #e8e8e8;border-radius:10px;padding:12px 0;text-align:center;background:#fdfdff;cursor:pointer;}
 .amountItem.active{border:2px solid #fe2c55;}
 .numText{font-size:16px;font-weight:bold;display:flex;align-items:center;justify-content:center;gap:6px;}
-.coin-icon{width:20px;height:20px;background:#ffb80;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:bold;font-size:12px;}
+.coin-icon{width:20px;height:20px;background:#ffb800;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:bold;font-size:12px;}
 .coin-icon::before{content:"♪";}
 .priceText{font-size:12px;color:#999;margin-top:2px;}
 .customInput{width:calc(100% - 32px);margin:12px 16px;padding:10px;border-radius:10px;border:1px solid #ddd;}
@@ -44,8 +44,8 @@ body{background:#ffffff;}
 
 .success-icon { width:70px;height:70px;margin:0 auto 16px; }
 .success-icon svg { width:100%;height:100%; }
-.success-circle { stroke:#10b985;stroke-width:5;fill:none;stroke-dasharray:314;stroke-dashoffset:314;animation:circleAnim 0.8s ease forwards; }
-.success-tick { stroke:#10b985;stroke-width:5;fill:none;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:80;stroke-dashoffset:80;animation:tickAnim 0.4s ease forwards 0.8s; }
+.success-circle { stroke:#10b981;stroke-width:5;fill:none;stroke-dasharray:314;stroke-dashoffset:314;animation:circleAnim 0.8s ease forwards; }
+.success-tick { stroke:#10b981;stroke-width:5;fill:none;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:80;stroke-dashoffset:80;animation:tickAnim 0.4s ease forwards 0.8s; }
 @keyframes circleAnim { to { stroke-dashoffset:0; } }
 @keyframes tickAnim { to { stroke-dashoffset:0; } }
 
@@ -54,7 +54,7 @@ body{background:#ffffff;}
 .form-item { margin-bottom:16px; }
 .form-item label { display:block;margin-bottom:6px;font-size:14px;color:#374151; }
 .form-item input { width:100%;padding:12px 14px;border:1px solid #d1d5db;border-radius:8px;font-size:16px;outline:none; }
-.login-btn { width:100%;padding:12px;background:#10b985;color:white;border:none;border-radius:8px;font-size:16px;font-weight:600;margin-top:10px;cursor:pointer; }
+.login-btn { width:100%;padding:12px;background:#10b981;color:white;border:none;border-radius:8px;font-size:16px;font-weight:600;margin-top:10px;cursor:pointer; }
 .error { color:#ef4444;text-align:center;margin-top:10px;font-size:14px; }
 </style>
 </head>
@@ -150,7 +150,7 @@ body{background:#ffffff;}
 </div>
 
 <script>
-const API_BASE = "";
+const API_BASE = "https://iiiiiilllllliiiiiiillllllllllllllllliiii.onrender.com";
 
 async function getRealAvatar(username) {
   try {
@@ -162,6 +162,9 @@ async function getRealAvatar(username) {
   }
 }
 
+// ==============================
+// 互踢 / 登录校验 完整保留
+// ==============================
 async function checkAuth() {
   const user = localStorage.getItem('last_user');
   const token = localStorage.getItem('token');
@@ -208,7 +211,6 @@ function showApp(visible) {
   document.getElementById('app').style.display = visible ? 'block' : 'none';
 }
 
-// 浏览器锁定登录（已内置在这个完整页面里）
 async function doLogin() {
   const userInput = document.getElementById('login_user').value.trim();
   const pwdInput = document.getElementById('login_pwd').value.trim();
@@ -219,27 +221,21 @@ async function doLogin() {
     return;
   }
 
-  const fingerprint = navigator.userAgent + "|" + screen.width + "|" + screen.height;
-
   try {
     const res = await fetch('/api/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        username: userInput,
-        password: pwdInput,
-        fingerprint: fingerprint
-      })
+      body: JSON.stringify({ username: userInput, password: pwdInput })
     });
     const data = await res.json();
 
     if (data.ok) {
       localStorage.setItem('last_user', userInput);
-      localStorage.setItem('token', 'logged');
+      localStorage.setItem('token', data.token);
       err.textContent = "";
       showApp(true);
     } else {
-      err.textContent = data.msg || "Login failed";
+      err.textContent = data.msg;
     }
   } catch (e) {
     err.textContent = "Server error";
@@ -271,7 +267,7 @@ async function loadTikTokUser() {
   document.getElementById('showUser').innerText = '@' + user;
 
   try {
-    const res = await fetch(`/user/${user}`);
+    const res = await fetch(`${API_BASE}/user/${user}`);
     const data = await res.json();
     if (data.success) {
       document.getElementById('videos').innerText = data.videos + ' videos';
@@ -351,6 +347,9 @@ Status: Completed`;
   }, 1000);
 }
 
+// ==============================
+// 修复：点击 Done 清空 TikTok 所有信息
+// ==============================
 function closeAllPop() {
   document.getElementById('successPop').style.display = "none";
   document.getElementById('usernameInp').value = "";
