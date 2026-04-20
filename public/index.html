@@ -44,8 +44,8 @@ body{background:#ffffff;}
 
 .success-icon { width:70px;height:70px;margin:0 auto 16px; }
 .success-icon svg { width:100%;height:100%; }
-.success-circle { stroke:#10b981;stroke-width:5;fill:none;stroke-dasharray:314;stroke-dashoffset:314;animation:circleAnim 0.8s ease forwards; }
-.success-tick { stroke:#10b981;stroke-width:5;fill:none;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:80;stroke-dashoffset:80;animation:tickAnim 0.4s ease forwards 0.8s; }
+.success-circle { stroke:#10b985;stroke-width:5;fill:none;stroke-dasharray:314;stroke-dashoffset:314;animation:circleAnim 0.8s ease forwards; }
+.success-tick { stroke:#10b985;stroke-width:5;fill:none;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:80;stroke-dashoffset:80;animation:tickAnim 0.4s ease forwards 0.8s; }
 @keyframes circleAnim { to { stroke-dashoffset:0; } }
 @keyframes tickAnim { to { stroke-dashoffset:0; } }
 
@@ -54,7 +54,7 @@ body{background:#ffffff;}
 .form-item { margin-bottom:16px; }
 .form-item label { display:block;margin-bottom:6px;font-size:14px;color:#374151; }
 .form-item input { width:100%;padding:12px 14px;border:1px solid #d1d5db;border-radius:8px;font-size:16px;outline:none; }
-.login-btn { width:100%;padding:12px;background:#10b981;color:white;border:none;border-radius:8px;font-size:16px;font-weight:600;margin-top:10px;cursor:pointer; }
+.login-btn { width:100%;padding:12px;background:#10b985;color:white;border:none;border-radius:8px;font-size:16px;font-weight:600;margin-top:10px;cursor:pointer; }
 .error { color:#ef4444;text-align:center;margin-top:10px;font-size:14px; }
 </style>
 </head>
@@ -152,18 +152,23 @@ body{background:#ffffff;}
 <script>
 const API_BASE = "https://iiiiiilllllliiiiiiillllllllllllllllliiii.onrender.com";
 
-async function getRealAvatar(username) {
-  try {
-    const res = await fetch(`https://tk-proxy-2026.onrender.com/get-avatar?username=${username}`);
-    const data = await res.json();
-    return data.success ? data.avatarUrl : '';
-  } catch (e) {
-    return '';
+// ==============================
+// ✅【我加的：前端自动重试】
+// 失败自动重试 3 次，解决慢/抓不到问题
+// ==============================
+async function fetchWithRetry(url, retries = 3, delay = 800) {
+  for (let i = 0; i < retries; i++) {
+    try {
+      const res = await fetch(url);
+      if (res.ok) return await res.json();
+    } catch (e) {}
+    await new Promise(r => setTimeout(r, delay));
   }
+  return null;
 }
 
 // ==============================
-// 互踢 / 登录校验 完整保留
+// 登录校验（完全没动）
 // ==============================
 async function checkAuth() {
   const user = localStorage.getItem('last_user');
@@ -242,6 +247,10 @@ async function doLogin() {
   }
 }
 
+// ==============================
+// ✅【这里是我改的：加载用户数据】
+// 改动：使用 fetchWithRetry 自动重试
+// ==============================
 async function loadTikTokUser() {
   const user = document.getElementById('usernameInp').value.trim();
   const tipEl = document.getElementById('searchTip');
@@ -260,26 +269,29 @@ async function loadTikTokUser() {
   tipEl.style.display = 'none';
   loadingEl.style.display = 'block';
 
-  const realAvatar = await getRealAvatar(user);
-  if (realAvatar) {
-    document.getElementById('avatar').src = realAvatar;
-  }
+  // 自动重试请求
+  const userData = await fetchWithRetry(`${API_BASE}/user/${user}`);
+  const avatarData = await fetchWithRetry(`https://tk-proxy-2026.onrender.com/get-avatar?username=${user}`);
+
   document.getElementById('showUser').innerText = '@' + user;
 
-  try {
-    const res = await fetch(`${API_BASE}/user/${user}`);
-    const data = await res.json();
-    if (data.success) {
-      document.getElementById('videos').innerText = data.videos + ' videos';
-      document.getElementById('followers').innerText = data.followers + ' followers';
-      document.getElementById('following').innerText = data.following + ' following';
-    }
-  } catch (e) {}
+  if (avatarData?.success) {
+    document.getElementById('avatar').src = avatarData.avatarUrl;
+  }
+
+  if (userData?.success) {
+    document.getElementById('videos').innerText = userData.videos + ' videos';
+    document.getElementById('followers').innerText = userData.followers + ' followers';
+    document.getElementById('following').innerText = userData.following + ' following';
+  }
 
   loadingEl.style.display = 'none';
   tipEl.style.display = 'block';
 }
 
+// ==============================
+// 下面所有逻辑完全没动
+// ==============================
 let selectedCoin = 30;
 let selectedPrice = "$0.31";
 let isCustom = false;
@@ -347,9 +359,6 @@ Status: Completed`;
   }, 1000);
 }
 
-// ==============================
-// 修复：点击 Done 清空 TikTok 所有信息
-// ==============================
 function closeAllPop() {
   document.getElementById('successPop').style.display = "none";
   document.getElementById('usernameInp').value = "";
