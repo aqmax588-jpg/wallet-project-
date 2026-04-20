@@ -15,6 +15,12 @@ if (!fs.existsSync(DB_FILE)) {
   fs.writeFileSync(DB_FILE, JSON.stringify([], null, 2));
 }
 
+// 定义管理员账号（你原来的 admin/admin123）
+let admin = {
+  user: "admin",
+  pwd: "admin123"
+};
+
 function readDB() {
   return JSON.parse(fs.readFileSync(DB_FILE, 'utf8'));
 }
@@ -25,12 +31,13 @@ function now() {
   return new Date().toISOString();
 }
 
+// 生成随机 token
 function genToken() {
   return Math.random().toString(36).slice(2) + Date.now().toString(36);
 }
 
 // ------------------------------
-// 登录：永远只保留【最后一次登录的token】
+// 用户登录（带过期、禁用、互踢）
 // ------------------------------
 app.post('/api/login', (req, res) => {
   const { username, password } = req.body;
@@ -39,14 +46,17 @@ app.post('/api/login', (req, res) => {
   const user = db.find(u => u.username === username);
   if (!user) return res.json({ ok: false, msg: '账号不存在' });
 
+  // 密码错误
   if (user.password !== password) {
     return res.json({ ok: false, msg: '密码错误' });
   }
 
+  // 被禁用
   if (!user.enabled) {
     return res.json({ ok: false, msg: '账号已禁用' });
   }
 
+  // 已到期
   const nowTs = Date.now();
   if (user.expireAt) {
     const expTs = new Date(user.expireAt).getTime();
@@ -55,41 +65,40 @@ app.post('/api/login', (req, res) => {
     }
   }
 
-  // 关键：每次登录都生成新token，覆盖旧的 → 永远只有最后登录有效
-  user.latestToken = genToken();
-  user.lastActive = Date.now();
-
+  // 生成新 token，实现互踢
+  const token = genToken();
+  user.token = token;
   writeDB(db);
-  res.json({ ok: true, token: user.latestToken });
+
+  res.json({ ok: true, token });
 });
 
 // ------------------------------
-// 校验：只认 latestToken
+// 前端每次刷新校验 token
 // ------------------------------
 app.post('/api/check', (req, res) => {
   const { username, token } = req.body;
   const db = readDB();
   const user = db.find(u => u.username === username);
 
-  if (!user || !user.enabled || !user.latestToken || user.latestToken !== token) {
+  if (!user || !user.enabled || !user.token || user.token !== token) {
     return res.json({ ok: false });
   }
 
+  // 到期检查
   if (user.expireAt && Date.now() > new Date(user.expireAt).getTime()) {
     return res.json({ ok: false });
   }
 
-  user.lastActive = Date.now();
-  writeDB(db);
   res.json({ ok: true });
 });
 
 // ------------------------------
-// 管理员功能完全保留
+// 管理员
 // ------------------------------
 app.post('/api/admin/login', (req, res) => {
   const { user, pwd } = req.body;
-  if (user === 'admin' && pwd === 'admin123') {
+  if (user === admin.user && pwd === admin.pwd) {
     res.json({ ok: true });
   } else {
     res.json({ ok: false });
@@ -97,16 +106,7 @@ app.post('/api/admin/login', (req, res) => {
 });
 
 app.get('/api/admin/list', (req, res) => {
-  const db = readDB();
-  const nowTime = Date.now();
-  const offlineMs = 10 * 60 * 1000;
-
-  const result = db.map(u => {
-    const isOnline = !!u.lastActive && (nowTime - u.lastActive < offlineMs);
-    return { ...u, online: isOnline };
-  });
-
-  res.json(result);
+  res.json(readDB());
 });
 
 app.post('/api/admin/delete', (req, res) => {
@@ -123,6 +123,7 @@ app.post('/api/admin/toggle', (req, res) => {
   const u = db.find(x => x.username === username);
   if (u) {
     u.enabled = enabled;
+    if (!enabled) u.token = null; // 禁用时强制踢下线
   }
   writeDB(db);
   res.json({ ok: true });
@@ -139,7 +140,10 @@ app.post('/api/admin/batch', (req, res) => {
   for (const line of arr) {
     const [user, pwd] = line.split(/\s+/).filter(Boolean);
     if (!user || !pwd) continue;
-    if (db.some(x => x.username === user)) { exist++; continue; }
+    if (db.some(x => x.username === user)) {
+      exist++;
+      continue;
+    }
 
     const nowTime = now();
     const expire = days > 0
@@ -147,8 +151,12 @@ app.post('/api/admin/batch', (req, res) => {
       : null;
 
     db.push({
-      username: user, password: pwd, enabled: true,
-      createdAt: nowTime, expireAt: expire, latestToken: null, lastActive: null
+      username: user,
+      password: pwd,
+      enabled: true,
+      createdAt: nowTime,
+      expireAt: expire,
+      token: null
     });
     success++;
   }
@@ -157,5 +165,39 @@ app.post('/api/admin/batch', (req, res) => {
   res.json({ ok: true, success, exist });
 });
 
+// ------------------------------
+// 【新增】修改管理员账号密码
+// ------------------------------
+app.post('/api/admin/set-user-pwd', (req, res) => {
+  const { newUser, newPwd } = req.body;
+  if (newUser) admin.user = newUser;
+  if (newPwd) admin.pwd = newPwd;
+  res.json({ ok: true });
+});
+
+// ------------------------------
+// 【新增】设置用户有效期（适配你的db.json）
+// ------------------------------
+app.post('/api/admin/set-expire', (req, res) => {
+  const { username, days } = req.body;
+  const db = readDB();
+  const user = db.find(u => u.username === username);
+
+  if (!user) {
+    return res.json({ ok: false, msg: "用户不存在" });
+  }
+
+  if (days <= 0) {
+    user.expireAt = null;
+  } else {
+    // 注意：你的数据库存的是 ISO 字符串，要和其他接口保持一致
+    user.expireAt = new Date(Date.now() + days * 86400 * 1000).toISOString();
+  }
+
+  writeDB(db);
+  res.json({ ok: true });
+});
+
+// 把 app.listen 放到最后！
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Running on ${PORT}`));
