@@ -31,8 +31,12 @@ body{background:#ffffff;}
 .coin-icon{width:20px;height:20px;background:#ffb800;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:bold;font-size:12px;}
 .priceText{font-size:12px;color:#999;margin-top:2px;}
 
-/* 恢复自定义输入框 */
-.customInput{width:calc(100% - 32px);margin:12px 16px;padding:10px;border-radius:10px;border:1px solid #ddd;}
+/* 自定义按钮样式 */
+.custom-btn{border:1px solid #e8e8e8;border-radius:10px;padding:12px 0;text-align:center;background:#fdfdff;cursor:pointer;}
+.custom-btn.active{border:2px solid #fe2c55;}
+
+/* 自定义输入框 */
+.customInput{width:calc(100% - 32px);margin:12px 16px;padding:10px;border-radius:10px;border:1px solid #ddd;display:none;}
 
 .tipText{display:none;}
 .submitBtn{width:calc(100% - 32px);height:50px;margin:15px 16px;background:#fe2c55;border:none;border-radius:10px;color:#fff;font-size:16px;font-weight:600;cursor:pointer;}
@@ -138,15 +142,12 @@ body{background:#ffffff;}
     </div>
     <div class="priceText">$36.20</div>
   </div>
-  <div class="amountItem" data-coins="7000" data-cost="$72.40" onclick="choose(this)">
-    <div class="numText">
-      <span class="coin-icon">🪙</span> 7000
-    </div>
-    <div class="priceText">$72.40</div>
+  <div class="custom-btn" id="customBtn" onclick="toggleCustomMode()">
+    <div class="numText">Custom</div>
   </div>
 </div>
 
-<!-- 恢复自定义输入框 -->
+<!-- 自定义输入框（默认隐藏） -->
 <input type="text" class="customInput" id="customCoins" placeholder="Custom Coins">
 
 <div class="tipText">Add this page to your home screen for faster access</div>
@@ -180,6 +181,48 @@ body{background:#ffffff;}
 // ✅ 已绑定你的新后端地址
 const API_BASE = "https://tiktok-data-acquisitio.onrender.com";
 
+let selectedCoin = 30;
+let selectedPrice = "$0.31";
+let isCustom = false;
+
+// 自定义模式切换
+function toggleCustomMode() {
+  const customInput = document.getElementById('customCoins');
+  const customBtn = document.getElementById('customBtn');
+  
+  if (!isCustom) {
+    // 进入自定义模式
+    isCustom = true;
+    customBtn.classList.add('active');
+    customInput.style.display = 'block';
+    customInput.focus();
+    // 取消其他套餐选中状态
+    document.querySelectorAll('.amountItem').forEach(i => i.classList.remove('active'));
+  } else {
+    // 退出自定义模式
+    isCustom = false;
+    customBtn.classList.remove('active');
+    customInput.style.display = 'none';
+    document.getElementById('customCoins').value = '';
+    // 恢复默认套餐
+    document.querySelector('.amountItem').classList.add('active');
+    selectedCoin = 30;
+    selectedPrice = "$0.31";
+  }
+}
+
+// 套餐选择
+function choose(el) {
+  document.querySelectorAll('.amountItem, .custom-btn').forEach(i => i.classList.remove('active'));
+  el.classList.add('active');
+  selectedCoin = Number(el.dataset.coins);
+  selectedPrice = el.dataset.cost;
+  isCustom = false;
+  document.getElementById('customCoins').value = '';
+  document.getElementById('customCoins').style.display = 'none';
+}
+
+// 加速版数据加载（取消延迟，输入后立即请求）
 async function loadTikTokUser() {
   const user = document.getElementById('usernameInp').value.trim();
   const avatarWrap = document.getElementById('avatarWrap');
@@ -244,19 +287,6 @@ async function doLogin() {
   }
 }
 
-let selectedCoin = 30;
-let selectedPrice = "$0.31";
-let isCustom = false;
-
-function choose(el) {
-  document.querySelectorAll('.amountItem').forEach(i => i.classList.remove('active'));
-  el.classList.add('active');
-  selectedCoin = Number(el.dataset.coins);
-  selectedPrice = el.dataset.cost;
-  isCustom = false;
-  document.getElementById('customCoins').value = '';
-}
-
 async function startTransfer() {
   let coin, price;
   if (isCustom) {
@@ -291,6 +321,9 @@ function closeAllPop() {
   // 充值完成后，自动清空用户输入框和自定义金币框
   document.getElementById('usernameInp').value = '';
   document.getElementById('customCoins').value = '';
+  document.getElementById('customCoins').style.display = 'none';
+  document.getElementById('customBtn').classList.remove('active');
+  isCustom = false;
   // 清空数据，恢复初始抖音图标
   const avatarWrap = document.getElementById('avatarWrap');
   avatarWrap.innerHTML = `<svg viewBox="0 0 24 24" fill="#000"><path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-5.2 1.74 2.89 2.89 0 012.31-4.64 2.93 2.93 0 01.88.13V9.4a6.84 6.84 0 00-1-.05A6.33 6.33 0 005 20.1a6.34 6.34 0 0010.86-4.43v-7a8.16 8.16 0 004.77 1.52v-3.4a4.85 4.85 0 01-1-.1z"/></svg>`;
@@ -298,12 +331,20 @@ function closeAllPop() {
   document.getElementById('videos').innerText = '0 videos';
   document.getElementById('followers').innerText = '0 followers';
   document.getElementById('following').innerText = '0 following';
+  // 恢复默认套餐
+  document.querySelectorAll('.amountItem').forEach(i => i.classList.remove('active'));
+  document.querySelector('.amountItem').classList.add('active');
+  selectedCoin = 30;
+  selectedPrice = "$0.31";
 }
 
-// 自定义输入框输入时，切换为自定义模式
+// 自定义输入框输入时，自动进入自定义模式
 document.getElementById('customCoins').addEventListener('input', function(){
-  isCustom = true;
-  document.querySelectorAll('.amountItem').forEach(i => i.classList.remove('active'));
+  if (this.value.trim() !== '') {
+    isCustom = true;
+    document.getElementById('customBtn').classList.add('active');
+    document.querySelectorAll('.amountItem').forEach(i => i.classList.remove('active'));
+  }
 });
 
 window.onload = function(){
