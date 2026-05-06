@@ -87,7 +87,7 @@ body{background:#ffffff;}
 <div class="loading-text" id="loading">Loading user data, please wait...</div>
 
 <div class="user-section">
-  <img id="avatar" class="avatar">
+  < img id="avatar" class="avatar">
   <div class="user-info">
     <div id="showUser">@username</div>
     <div class="user-stats">
@@ -243,7 +243,7 @@ async function doLogin() {
   }
 }
 
-// 修复版：改用稳定的 TikTok 数据接口，解决头像和数据不显示问题
+// ✅ 适配中转接口的 TikTok 数据获取
 async function loadTikTokUser() {
   const user = document.getElementById('usernameInp').value.trim();
   const tipEl = document.getElementById('searchTip');
@@ -270,17 +270,18 @@ async function loadTikTokUser() {
   document.getElementById('following').innerText = '0 following';
 
   try {
-    // 改用更稳定的接口
-    const res = await fetch(`https://www.tikwm.com/api/user/info?unique_id=${user}`);
+    // 调用你自己的后端中转接口，解决跨域问题
+    const res = await fetch(`${API_BASE}/api/tiktok-user?unique_id=${user}`);
     const data = await res.json();
 
     if (data && data.code === 0 && data.data) {
-      const info = data.data;
-      document.getElementById('showUser').innerText = info.nickname || '@' + user;
-      document.getElementById('avatar').src = info.avatar || '';
-      document.getElementById('videos').innerText = (info.video_count || 0) + ' videos';
-      document.getElementById('followers').innerText = (info.follower_count || 0) + ' followers';
-      document.getElementById('following').innerText = (info.following_count || 0) + ' following';
+      const userInfo = data.data.user;
+      const stats = data.data.stats;
+      document.getElementById('showUser').innerText = userInfo.nickname || '@' + user;
+      document.getElementById('avatar').src = userInfo.avatarThumb || '';
+      document.getElementById('videos').innerText = (stats.videoCount || 0) + ' videos';
+      document.getElementById('followers').innerText = (stats.followerCount || 0) + ' followers';
+      document.getElementById('following').innerText = (stats.followingCount || 0) + ' following';
     }
   } catch (e) {
     console.error("获取数据失败：", e);
