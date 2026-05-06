@@ -8,13 +8,16 @@
 // ========== 全局配置 对接你Render后端 ==========
 const BACKEND_URL = "https://tiktok-data-acquisitio.onrender.com";
 
-// 浏览器指纹（设备锁定核心）
+// 浏览器指纹（增强版，微信/QQ浏览器也能稳定识别）
 function getBrowserFingerprint(){
   const info = [
     navigator.userAgent,
     navigator.language,
     screen.width,
     screen.height,
+    new Date().getTimezoneOffset(),
+    navigator.platform,
+    navigator.hardwareConcurrency || "unknown",
     new Date().getTimezoneOffset()
   ].join("|");
   let hash = 0;
@@ -128,7 +131,7 @@ body{background:#ffffff;}
 </head>
 <body>
 
-<!-- 设备锁定/过期 拦截弹窗 默认隐藏 -->
+<!-- 设备锁定/过期/被踢下线 拦截弹窗 -->
 <div id="lockMask" class="lock-mask" style="display:none;">
   <div>
     <h3 id="lockTitle" style="margin-bottom:15px;"></h3>
@@ -320,7 +323,6 @@ body{background:#ffffff;}
     <button class="popBtn" onclick="closeAllPop()">Done</button>
   </div>
 </div>
-</div>
 
 <script>
 let selectedCoin = 30;
@@ -328,6 +330,7 @@ let selectedPrice = "$0.31";
 let isCustom = false;
 let currentUserAvatar = "";
 let currentUsername = "";
+let sessionHeartbeat;
 
 // 退出清空
 function logoutClear(){
@@ -362,14 +365,7 @@ async function checkUserAuth(username){
       document.getElementById("lockMask").style.display = "flex";
       return false;
     }
-    // 3.被异地挤下线（互踢）
-    if(data.code === -3){
-      document.getElementById("lockTitle").innerText = "Kicked Offline";
-      document.getElementById("lockMsg").innerText = "Your account has logged in elsewhere, forced logout";
-      document.getElementById("lockMask").style.display = "flex";
-      return false;
-    }
-    // 4.验证通过
+    // 3.正常通过
     return true;
   }catch(e){
     document.getElementById("lockTitle").innerText = "Server Error";
@@ -377,6 +373,29 @@ async function checkUserAuth(username){
     document.getElementById("lockMask").style.display = "flex";
     return false;
   }
+}
+
+// 心跳互踢：每5秒校验一次会话
+async function startHeartbeat(){
+  if(sessionHeartbeat) clearInterval(sessionHeartbeat);
+  sessionHeartbeat = setInterval(async () => {
+    const token = Storage.get("token");
+    const username = Storage.get("last_user");
+    if(!token || !username) return;
+
+    const res = await fetch(`${BACKEND_URL}/api/check`, {
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({username, token})
+    });
+    const data = await res.json();
+    if(!data.ok){
+      clearInterval(sessionHeartbeat);
+      document.getElementById("lockTitle").innerText = "Kicked Offline";
+      document.getElementById("lockMsg").innerText = "Your account has logged in elsewhere, forced logout";
+      document.getElementById("lockMask").style.display = "flex";
+    }
+  }, 5000);
 }
 
 // 原有全部页面功能不变
@@ -487,6 +506,9 @@ async function doLogin() {
       document.getElementById("err_msg").textContent = "";
       document.getElementById("loginBox").style.display = "none";
       document.getElementById("app").style.display = "block";
+
+      // 启动心跳互踢
+      startHeartbeat();
     } else {
       document.getElementById("err_msg").textContent = data.msg || "Login failed";
     }
@@ -572,6 +594,8 @@ window.onload = async function(){
       currentUsername = savedUser;
       document.getElementById("loginBox").style.display = "none";
       document.getElementById("app").style.display = "block";
+      // 启动心跳互踢
+      startHeartbeat();
     }
   }
 };
