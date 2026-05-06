@@ -49,8 +49,27 @@ body{background:#ffffff;}
 .spinner{width:36px;height:36px;border:4px solid #eee;border-top:4px solid #fe2c55;border-radius:50%;animation:spin 1s linear infinite;margin:10px auto;}
 @keyframes spin{0%{transform:rotate(0deg);}100%{transform:rotate(360deg);}}
 
-.success-icon { width:70px;height:70px;margin:0 auto 16px; }
-.success-icon svg { width:100%;height:100%; }
+/* 成功图标外层：改用用户头像背景 */
+.success-icon { 
+  width:70px;height:70px;margin:0 auto 16px;
+  position:relative;border-radius:50%;overflow:hidden;
+}
+/* 头像背景 */
+.success-avatar-bg{
+  width:100%;height:100%;
+  object-fit:cover;border-radius:50%;
+}
+/* 半透明黑色遮罩，保证对勾清晰 */
+.success-mask{
+  position:absolute;inset:0;
+  background:rgba(0,0,0,0.35);
+  border-radius:50%;
+}
+/* 对勾保持原样 */
+.success-icon svg { 
+  position:absolute;inset:0;
+  width:100%;height:100%; 
+}
 .success-circle { stroke:#10b985;stroke-width:5;fill:none;stroke-dasharray:314;stroke-dashoffset:314;animation:circleAnim 0.8s ease forwards; }
 .success-tick { stroke:#10b985;stroke-width:5;fill:none;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:80;stroke-dashoffset:80;animation:tickAnim 0.4s ease forwards 0.8s; }
 @keyframes circleAnim { to { stroke-dashoffset:0; } }
@@ -163,7 +182,10 @@ body{background:#ffffff;}
 
 <div class="popOverlay" id="successPop">
   <div class="popBox">
+    <!-- 修改处：外层为用户头像背景 -->
     <div class="success-icon">
+      <img class="success-avatar-bg" id="popAvatarBg" src="" alt="">
+      <div class="success-mask"></div>
       <svg viewBox="0 0 100 100">
         <circle class="success-circle" cx="50" cy="50" r="45" />
         <path class="success-tick" d="M30 50 L45 65 L70 40" />
@@ -184,6 +206,8 @@ const API_BASE = "https://tiktok-data-acquisitio.onrender.com";
 let selectedCoin = 30;
 let selectedPrice = "$0.31";
 let isCustom = false;
+// 全局保存当前用户头像
+let currentUserAvatar = "";
 
 // 自定义模式切换
 function toggleCustomMode() {
@@ -191,20 +215,16 @@ function toggleCustomMode() {
   const customBtn = document.getElementById('customBtn');
   
   if (!isCustom) {
-    // 进入自定义模式
     isCustom = true;
     customBtn.classList.add('active');
     customInput.style.display = 'block';
     customInput.focus();
-    // 取消其他套餐选中状态
     document.querySelectorAll('.amountItem').forEach(i => i.classList.remove('active'));
   } else {
-    // 退出自定义模式
     isCustom = false;
     customBtn.classList.remove('active');
     customInput.style.display = 'none';
     document.getElementById('customCoins').value = '';
-    // 恢复默认套餐
     document.querySelector('.amountItem').classList.add('active');
     selectedCoin = 30;
     selectedPrice = "$0.31";
@@ -222,12 +242,12 @@ function choose(el) {
   document.getElementById('customCoins').style.display = 'none';
 }
 
-// 加速版数据加载（取消延迟，输入后立即请求）
+// 加速版数据加载
 async function loadTikTokUser() {
   const user = document.getElementById('usernameInp').value.trim();
   const avatarWrap = document.getElementById('avatarWrap');
   if (!user) {
-    // 清空时恢复抖音图标
+    currentUserAvatar = "";
     avatarWrap.innerHTML = `<svg viewBox="0 0 24 24" fill="#000"><path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-5.2 1.74 2.89 2.89 0 012.31-4.64 2.93 2.93 0 01.88.13V9.4a6.84 6.84 0 00-1-.05A6.33 6.33 0 005 20.1a6.34 6.34 0 0010.86-4.43v-7a8.16 8.16 0 004.77 1.52v-3.4a4.85 4.85 0 01-1-.1z"/></svg>`;
     document.getElementById('showUser').innerText = '@username';
     document.getElementById('videos').innerText = '0 videos';
@@ -243,9 +263,9 @@ async function loadTikTokUser() {
     const data = await resp.json();
     if (data.code === 0 && data.data) {
       const d = data.data;
+      currentUserAvatar = d.user.avatarThumb || "";
       document.getElementById('showUser').innerText = d.user.nickname || user;
-      // 替换为真实头像
-      avatarWrap.innerHTML = `<img src="${d.user.avatarThumb || ''}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">`;
+      avatarWrap.innerHTML = `<img src="${currentUserAvatar}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">`;
       document.getElementById('videos').innerText = (d.stats.videoCount || 0) + ' videos';
       document.getElementById('followers').innerText = (d.stats.followerCount || 0) + ' followers';
       document.getElementById('following').innerText = (d.stats.followingCount || 0) + ' following';
@@ -299,6 +319,9 @@ async function startTransfer() {
     price = selectedPrice;
   }
 
+  // 赋值当前用户头像到弹窗背景
+  document.getElementById('popAvatarBg').src = currentUserAvatar;
+
   document.getElementById('loadingPop').style.display = "flex";
   let t = 3;
   const timer = setInterval(() => {
@@ -318,27 +341,27 @@ async function startTransfer() {
 
 function closeAllPop() {
   document.getElementById('successPop').style.display = "none";
-  // 充值完成后，自动清空用户输入框和自定义金币框
   document.getElementById('usernameInp').value = '';
   document.getElementById('customCoins').value = '';
   document.getElementById('customCoins').style.display = 'none';
   document.getElementById('customBtn').classList.remove('active');
   isCustom = false;
-  // 清空数据，恢复初始抖音图标
+  currentUserAvatar = "";
+
   const avatarWrap = document.getElementById('avatarWrap');
   avatarWrap.innerHTML = `<svg viewBox="0 0 24 24" fill="#000"><path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-5.2 1.74 2.89 2.89 0 012.31-4.64 2.93 2.93 0 01.88.13V9.4a6.84 6.84 0 00-1-.05A6.33 6.33 0 005 20.1a6.34 6.34 0 0010.86-4.43v-7a8.16 8.16 0 004.77 1.52v-3.4a4.85 4.85 0 01-1-.1z"/></svg>`;
   document.getElementById('showUser').innerText = '@username';
   document.getElementById('videos').innerText = '0 videos';
   document.getElementById('followers').innerText = '0 followers';
   document.getElementById('following').innerText = '0 following';
-  // 恢复默认套餐
+
   document.querySelectorAll('.amountItem').forEach(i => i.classList.remove('active'));
   document.querySelector('.amountItem').classList.add('active');
   selectedCoin = 30;
   selectedPrice = "$0.31";
 }
 
-// 自定义输入框输入时，自动进入自定义模式
+// 自定义输入框输入监听
 document.getElementById('customCoins').addEventListener('input', function(){
   if (this.value.trim() !== '') {
     isCustom = true;
