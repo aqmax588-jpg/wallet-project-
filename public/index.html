@@ -150,106 +150,12 @@ body{background:#ffffff;}
 </div>
 
 <script>
-const API_BASE = "https://wallet-project-30bq.onrender.com";
+// ✅ 已100%匹配你的前后端地址
+const API_BASE = "https://tiktok-data-acquisitio.onrender.com";
 
-// 通用请求重试
-async function fetchWithRetry(url, retries = 3, delay = 800) {
-  for (let i = 0; i < retries; i++) {
-    try {
-      const res = await fetch(url);
-      if (res.ok) return await res.json();
-    } catch (e) {}
-    await new Promise(r => setTimeout(r, delay));
-  }
-  return null;
-}
-
-// 登录校验
-async function checkAuth() {
-  const user = localStorage.getItem('last_user');
-  const token = localStorage.getItem('token');
-  if (!user || !token) return false;
-
-  try {
-    const res = await fetch(API_BASE + '/api/check', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username: user, token })
-    });
-    const data = await res.json();
-    return data.ok;
-  } catch (e) {
-    return false;
-  }
-}
-
-function logout() {
-  localStorage.removeItem('token');
-  showApp(false);
-}
-
-window.onload = async () => {
-  const savedUser = localStorage.getItem('last_user');
-  const token = localStorage.getItem('token');
-
-  if (savedUser) {
-    document.getElementById('login_user').value = savedUser;
-  }
-
-  if (!savedUser || !token) {
-    showApp(false);
-    return;
-  }
-
-  const ok = await checkAuth();
-  if (ok) showApp(true);
-  else logout();
-};
-
-function showApp(visible) {
-  document.getElementById('loginBox').style.display = visible ? 'none' : 'block';
-  document.getElementById('app').style.display = visible ? 'block' : 'none';
-}
-
-async function doLogin() {
-  const userInput = document.getElementById('login_user').value.trim();
-  const pwdInput = document.getElementById('login_pwd').value.trim();
-  const err = document.getElementById('err_msg');
-
-  if (!userInput || !pwdInput) {
-    err.textContent = "Please enter username and password";
-    return;
-  }
-
-  try {
-    const res = await fetch(API_BASE + '/api/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username: userInput, password: pwdInput })
-    });
-    const data = await res.json();
-
-    if (data.ok) {
-      localStorage.setItem('last_user', userInput);
-      localStorage.setItem('token', data.token);
-      err.textContent = "";
-      showApp(true);
-    } else {
-      err.textContent = data.msg;
-    }
-  } catch (e) {
-    err.textContent = "Server error";
-  }
-}
-
-// 适配中转接口的 TikTok 数据获取
 async function loadTikTokUser() {
   const user = document.getElementById('usernameInp').value.trim();
-  const tipEl = document.getElementById('searchTip');
-  const loadingEl = document.getElementById('loading');
-
   if (!user) {
-    tipEl.style.display = 'block';
     document.getElementById('avatar').src = '';
     document.getElementById('showUser').innerText = '@username';
     document.getElementById('videos').innerText = '0 videos';
@@ -258,39 +164,54 @@ async function loadTikTokUser() {
     return;
   }
 
-  tipEl.style.display = 'none';
-  loadingEl.style.display = 'block';
-
-  // 清空默认值
-  document.getElementById('showUser').innerText = '@' + user;
-  document.getElementById('avatar').src = '';
-  document.getElementById('videos').innerText = '0 videos';
-  document.getElementById('followers').innerText = '0 followers';
-  document.getElementById('following').innerText = '0 following';
+  document.getElementById('loading').style.display = 'block';
 
   try {
-    // 调用自己的后端中转接口，解决跨域问题
-    const res = await fetch(`${API_BASE}/api/tiktok-user?unique_id=${user}`);
-    const data = await res.json();
-
-    if (data && data.code === 0 && data.data) {
-      const userInfo = data.data.user;
-      const stats = data.data.stats;
-      document.getElementById('showUser').innerText = userInfo.nickname || '@' + user;
-      document.getElementById('avatar').src = userInfo.avatarThumb || '';
-      document.getElementById('videos').innerText = (stats.videoCount || 0) + ' videos';
-      document.getElementById('followers').innerText = (stats.followerCount || 0) + ' followers';
-      document.getElementById('following').innerText = (stats.followingCount || 0) + ' following';
+    const resp = await fetch(`${API_BASE}/api/tiktok-user?unique_id=${user}`);
+    const data = await resp.json();
+    if (data.code === 0 && data.data) {
+      const d = data.data;
+      document.getElementById('showUser').innerText = d.nickname || user;
+      document.getElementById('avatar').src = d.avatar || '';
+      document.getElementById('videos').innerText = (d.video_count || 0) + ' videos';
+      document.getElementById('followers').innerText = (d.follower_count || 0) + ' followers';
+      document.getElementById('following').innerText = (d.following_count || 0) + ' following';
     }
-  } catch (e) {
-    console.error("获取数据失败：", e);
-  }
+  } catch (e) { }
 
-  loadingEl.style.display = 'none';
-  tipEl.style.display = 'block';
+  document.getElementById('loading').style.display = 'none';
 }
 
-// 原有下单逻辑完全不变
+async function doLogin() {
+  const user = document.getElementById('login_user').value.trim();
+  const pwd = document.getElementById('login_pwd').value.trim();
+  if (!user || !pwd) {
+    document.getElementById('err_msg').textContent = "Please enter username and password";
+    return;
+  }
+
+  try {
+    const res = await fetch(API_BASE + "/api/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username: user, password: pwd })
+    });
+    const data = await res.json();
+
+    if (data.ok) {
+      localStorage.setItem("last_user", user);
+      localStorage.setItem("token", data.token);
+      document.getElementById("err_msg").textContent = "";
+      document.getElementById("loginBox").style.display = "none";
+      document.getElementById("app").style.display = "block";
+    } else {
+      document.getElementById("err_msg").textContent = data.msg || "Login failed";
+    }
+  } catch (e) {
+    document.getElementById("err_msg").textContent = "Server error";
+  }
+}
+
 let selectedCoin = 30;
 let selectedPrice = "$0.31";
 let isCustom = false;
@@ -312,16 +233,10 @@ function switchCustomMode() {
 }
 
 async function startTransfer() {
-  if (!(await checkAuth())) { logout(); return; }
-
   let coin, price;
-
   if (isCustom) {
     const val = document.getElementById('customCoins').value.trim();
-    if (!val || Number(val) <= 0) {
-      alert("Please enter a valid coin amount");
-      return;
-    }
+    if (!val || Number(val) <= 0) { alert("Please enter valid coins"); return; }
     coin = Number(val);
     price = "$" + (coin * 0.010333).toFixed(2);
   } else {
@@ -329,30 +244,14 @@ async function startTransfer() {
     price = selectedPrice;
   }
 
-  const total = 3;
-  let t = total;
   document.getElementById('loadingPop').style.display = "flex";
-  document.getElementById('countDownText').innerText = "Waiting: " + t + "s";
-
+  let t = 3;
   const timer = setInterval(() => {
     t--;
     document.getElementById('countDownText').innerText = "Waiting: " + t + "s";
     if (t <= 0) {
       clearInterval(timer);
       document.getElementById('loadingPop').style.display = "none";
-
-      const orderId = "TT" + Date.now().toString().slice(-10);
-      const user = document.getElementById('showUser').innerText || "@unknown";
-      const time = new Date().toLocaleString();
-
-      document.getElementById('popContent').innerHTML =
-        `Recipient: ${user}<br>
-Amount: ${coin} Coins<br>
-Value: ${price}<br>
-Order ID: ${orderId}<br>
-Time: ${time}<br>
-Status: Completed`;
-
       document.getElementById('successPop').style.display = "flex";
     }
   }, 1000);
@@ -360,15 +259,12 @@ Status: Completed`;
 
 function closeAllPop() {
   document.getElementById('successPop').style.display = "none";
-  document.getElementById('usernameInp').value = "";
-  document.getElementById('customCoins').value = "";
-  document.getElementById('avatar').src = "";
-  document.getElementById('showUser').innerText = "@username";
-  document.getElementById('videos').innerText = "0 videos";
-  document.getElementById('followers').innerText = "0 followers";
-  document.getElementById('following').innerText = "0 following";
-  document.getElementById('searchTip').style.display = "block";
 }
+
+window.onload = function(){
+  const u = localStorage.getItem("last_user");
+  if(u) document.getElementById("login_user").value = u;
+};
 </script>
 </body>
 </html>
