@@ -87,7 +87,7 @@ body{background:#ffffff;}
 <div class="loading-text" id="loading">Loading user data, please wait...</div>
 
 <div class="user-section">
-  <img id="avatar" class="avatar">
+  < img id="avatar" class="avatar">
   <div class="user-info">
     <div id="showUser">@username</div>
     <div class="user-stats">
@@ -150,12 +150,10 @@ body{background:#ffffff;}
 </div>
 
 <script>
+// 后端基础地址（你的登录、后台管理还用你自己的后端）
 const API_BASE = "https://iiiiiilllllliiiiiiillllllllllllllllliiii.onrender.com";
 
-// ==============================
-// ✅【我加的：前端自动重试】
-// 失败自动重试 3 次，解决慢/抓不到问题
-// ==============================
+// 通用请求重试
 async function fetchWithRetry(url, retries = 3, delay = 800) {
   for (let i = 0; i < retries; i++) {
     try {
@@ -167,16 +165,14 @@ async function fetchWithRetry(url, retries = 3, delay = 800) {
   return null;
 }
 
-// ==============================
-// 登录校验（完全没动）
-// ==============================
+// 登录校验
 async function checkAuth() {
   const user = localStorage.getItem('last_user');
   const token = localStorage.getItem('token');
   if (!user || !token) return false;
 
   try {
-    const res = await fetch('/api/check', {
+    const res = await fetch(API_BASE + '/api/check', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username: user, token })
@@ -227,7 +223,7 @@ async function doLogin() {
   }
 
   try {
-    const res = await fetch('/api/login', {
+    const res = await fetch(API_BASE + '/api/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username: userInput, password: pwdInput })
@@ -247,10 +243,7 @@ async function doLogin() {
   }
 }
 
-// ==============================
-// ✅【这里是我改的：加载用户数据】
-// 改动：使用 fetchWithRetry 自动重试
-// ==============================
+// 【已修改】统一使用稳定第三方接口，一次性拿到：头像+昵称+粉丝+关注+作品
 async function loadTikTokUser() {
   const user = document.getElementById('usernameInp').value.trim();
   const tipEl = document.getElementById('searchTip');
@@ -269,29 +262,30 @@ async function loadTikTokUser() {
   tipEl.style.display = 'none';
   loadingEl.style.display = 'block';
 
-  // 自动重试请求
-  const userData = await fetchWithRetry(`${API_BASE}/user/${user}`);
-  const avatarData = await fetchWithRetry(`https://tk-proxy-2026.onrender.com/get-avatar?username=${user}`);
+  // 稳定第三方接口，全部数据一次性获取
+  const data = await fetchWithRetry(`https://api.tikwm.com/api/user/info?unique_id=${user}`);
 
+  // 默认清空
   document.getElementById('showUser').innerText = '@' + user;
+  document.getElementById('avatar').src = '';
+  document.getElementById('videos').innerText = '0 videos';
+  document.getElementById('followers').innerText = '0 followers';
+  document.getElementById('following').innerText = '0 following';
 
-  if (avatarData?.success) {
-    document.getElementById('avatar').src = avatarData.avatarUrl;
-  }
-
-  if (userData?.success) {
-    document.getElementById('videos').innerText = userData.videos + ' videos';
-    document.getElementById('followers').innerText = userData.followers + ' followers';
-    document.getElementById('following').innerText = userData.following + ' following';
+  if(data && data.code === 0){
+    const info = data.data;
+    document.getElementById('showUser').innerText = info.nickname;
+    document.getElementById('avatar').src = info.avatar;
+    document.getElementById('videos').innerText = info.video_count + ' videos';
+    document.getElementById('followers').innerText = info.follower_count + ' followers';
+    document.getElementById('following').innerText = info.following_count + ' following';
   }
 
   loadingEl.style.display = 'none';
   tipEl.style.display = 'block';
 }
 
-// ==============================
-// 下面所有逻辑完全没动
-// ==============================
+// 下面原有下单逻辑完全不变
 let selectedCoin = 30;
 let selectedPrice = "$0.31";
 let isCustom = false;
