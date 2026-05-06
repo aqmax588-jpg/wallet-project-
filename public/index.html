@@ -175,8 +175,8 @@ body{background:#ffffff;}
 <div class="popOverlay" id="loadingPop">
   <div class="popBox">
     <div class="spinner"></div>
-    <p>Processing transfer...</p >
-    <p class="countdownTxt" id="countDownText"></p >
+    <p>Processing transfer...</p>
+    <p class="countdownTxt" id="countDownText"></p>
   </div>
 </div>
 
@@ -192,8 +192,9 @@ body{background:#ffffff;}
       </svg>
     </div>
     <h3>Transfer Successful</h3>
-    <p id="popContent"></p >
-    <p style="color:#060;margin-top:10px">Coins arrive within 24h</p >
+    <!-- 修改点：金额显示区域 -->
+    <div id="popContent" style="margin:10px 0;"></div>
+    <p style="color:#060;margin-top:10px">Coins arrive within 24h</p>
     <button class="popBtn" onclick="closeAllPop()">Done</button>
   </div>
 </div>
@@ -331,9 +332,14 @@ async function startTransfer() {
       clearInterval(timer);
       document.getElementById('loadingPop').style.display = "none";
       document.getElementById('successPop').style.display = "flex";
+      // 修改点：弹窗金额显示格式
       document.getElementById('popContent').innerHTML = `
-        Amount: ${coin} Coins (${price})<br>
-        Recipient: ${document.getElementById('showUser').innerText}
+        <div style="font-size:16px; font-weight:bold; display:flex; align-items:center; justify-content:center; gap:6px;">
+          <span style="display:inline-block; width:20px; height:20px; background:#ffb800; border-radius:50%; color:#fff; font-size:12px; text-align:center; line-height:20px;">🪙</span>
+          ${coin} Coins
+        </div>
+        <div style="font-size:14px; color:#666; margin:4px 0;">${price}</div>
+        <div style="font-size:14px; color:#555; margin-top:10px;">Recipient: ${document.getElementById('showUser').innerText}</div>
       `;
     }
   }, 1000);
