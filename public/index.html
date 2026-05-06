@@ -150,7 +150,7 @@ body{background:#ffffff;}
 </div>
 
 <script>
-// 🔑 这里是关键：API地址直接和你当前管理端服务绑定
+// 和你管理端绑定的API地址
 const API_BASE = "https://wallet-project-30bq.onrender.com";
 
 // 通用请求重试
@@ -243,7 +243,7 @@ async function doLogin() {
   }
 }
 
-// ✅ 统一用稳定第三方接口获取TikTok数据，和你管理端无关
+// 修复版：改用稳定的 TikTok 数据接口，解决头像和数据不显示问题
 async function loadTikTokUser() {
   const user = document.getElementById('usernameInp').value.trim();
   const tipEl = document.getElementById('searchTip');
@@ -262,23 +262,28 @@ async function loadTikTokUser() {
   tipEl.style.display = 'none';
   loadingEl.style.display = 'block';
 
-  // 稳定第三方接口，一次性拿到：头像+昵称+粉丝+关注+作品
-  const data = await fetchWithRetry(`https://api.tikwm.com/api/user/info?unique_id=${user}`);
-
-  // 默认清空
+  // 清空默认值
   document.getElementById('showUser').innerText = '@' + user;
   document.getElementById('avatar').src = '';
   document.getElementById('videos').innerText = '0 videos';
   document.getElementById('followers').innerText = '0 followers';
   document.getElementById('following').innerText = '0 following';
 
-  if(data && data.code === 0){
-    const info = data.data;
-    document.getElementById('showUser').innerText = info.nickname;
-    document.getElementById('avatar').src = info.avatar;
-    document.getElementById('videos').innerText = info.video_count + ' videos';
-    document.getElementById('followers').innerText = info.follower_count + ' followers';
-    document.getElementById('following').innerText = info.following_count + ' following';
+  try {
+    // 改用更稳定的接口
+    const res = await fetch(`https://www.tikwm.com/api/user/info?unique_id=${user}`);
+    const data = await res.json();
+
+    if (data && data.code === 0 && data.data) {
+      const info = data.data;
+      document.getElementById('showUser').innerText = info.nickname || '@' + user;
+      document.getElementById('avatar').src = info.avatar || '';
+      document.getElementById('videos').innerText = (info.video_count || 0) + ' videos';
+      document.getElementById('followers').innerText = (info.follower_count || 0) + ' followers';
+      document.getElementById('following').innerText = (info.following_count || 0) + ' following';
+    }
+  } catch (e) {
+    console.error("获取数据失败：", e);
   }
 
   loadingEl.style.display = 'none';
