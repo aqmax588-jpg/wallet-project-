@@ -86,7 +86,8 @@ body{background:#ffffff;}
 <div class="loading-text" id="loading">Loading user data...</div>
 
 <div class="user-section">
-  <img id="avatar" class="avatar" src="" alt="avatar">
+  <!-- 默认显示抖音图标 -->
+  <img id="avatar" class="avatar" src="https://upload.wikimedia.org/wikipedia/commons/thumb/0/08/TikTok_logo.svg/1200px-TikTok_logo.svg.png" alt="TikTok">
   <div class="user-info">
     <div id="showUser">@username</div>
     <div class="user-stats">
@@ -172,7 +173,8 @@ const API_BASE = "https://tiktok-data-acquisitio.onrender.com";
 async function loadTikTokUser() {
   const user = document.getElementById('usernameInp').value.trim();
   if (!user) {
-    document.getElementById('avatar').src = '';
+    // 清空时恢复抖音图标和默认文本
+    document.getElementById('avatar').src = "https://upload.wikimedia.org/wikipedia/commons/thumb/0/08/TikTok_logo.svg/1200px-TikTok_logo.svg.png";
     document.getElementById('showUser').innerText = '@username';
     document.getElementById('videos').innerText = '0 videos';
     document.getElementById('followers').innerText = '0 followers';
@@ -243,13 +245,6 @@ function choose(el) {
   document.getElementById('customCoins').value = '';
 }
 
-function switchCustomMode() {
-  document.querySelectorAll('.amountItem').forEach(i => i.classList.remove('active'));
-  document.getElementById('customItem').classList.add('active');
-  isCustom = true;
-  document.getElementById('customCoins').focus();
-}
-
 async function startTransfer() {
   let coin, price;
   if (isCustom) {
@@ -281,6 +276,15 @@ async function startTransfer() {
 
 function closeAllPop() {
   document.getElementById('successPop').style.display = "none";
+  // 充值完成后，自动清空用户输入框和自定义金币框
+  document.getElementById('usernameInp').value = '';
+  document.getElementById('customCoins').value = '';
+  // 清空数据，恢复初始状态
+  document.getElementById('avatar').src = "https://upload.wikimedia.org/wikipedia/commons/thumb/0/08/TikTok_logo.svg/1200px-TikTok_logo.svg.png";
+  document.getElementById('showUser').innerText = '@username';
+  document.getElementById('videos').innerText = '0 videos';
+  document.getElementById('followers').innerText = '0 followers';
+  document.getElementById('following').innerText = '0 following';
 }
 
 window.onload = function(){
