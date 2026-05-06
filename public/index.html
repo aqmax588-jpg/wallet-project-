@@ -150,7 +150,6 @@ body{background:#ffffff;}
 </div>
 
 <script>
-// 和你管理端绑定的API地址
 const API_BASE = "https://wallet-project-30bq.onrender.com";
 
 // 通用请求重试
@@ -165,7 +164,7 @@ async function fetchWithRetry(url, retries = 3, delay = 800) {
   return null;
 }
 
-// 登录校验（和你管理端完全配套）
+// 登录校验
 async function checkAuth() {
   const user = localStorage.getItem('last_user');
   const token = localStorage.getItem('token');
@@ -243,7 +242,7 @@ async function doLogin() {
   }
 }
 
-// ✅ 适配中转接口的 TikTok 数据获取
+// 适配中转接口的 TikTok 数据获取
 async function loadTikTokUser() {
   const user = document.getElementById('usernameInp').value.trim();
   const tipEl = document.getElementById('searchTip');
@@ -270,7 +269,7 @@ async function loadTikTokUser() {
   document.getElementById('following').innerText = '0 following';
 
   try {
-    // 调用你自己的后端中转接口，解决跨域问题
+    // 调用自己的后端中转接口，解决跨域问题
     const res = await fetch(`${API_BASE}/api/tiktok-user?unique_id=${user}`);
     const data = await res.json();
 
