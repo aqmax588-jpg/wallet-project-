@@ -5,21 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>TikTok Wallet</title>
 <script>
-// ========== 全局配置 对接你Render后端 ==========
+// 后端地址已直接写死 无需手动修改
 const BACKEND_URL = "https://tiktok-data-acquisitio.onrender.com";
 
-// 浏览器指纹（增强版，微信/QQ浏览器也能稳定识别）
+// 精简高速浏览器指纹（提速优化）
 function getBrowserFingerprint(){
-  const info = [
-    navigator.userAgent,
-    navigator.language,
-    screen.width,
-    screen.height,
-    new Date().getTimezoneOffset(),
-    navigator.platform,
-    navigator.hardwareConcurrency || "unknown",
-    new Date().getTimezoneOffset()
-  ].join("|");
+  const info = navigator.userAgent + screen.width + screen.height + navigator.language;
   let hash = 0;
   for(let i=0;i<info.length;i++){
     const char = info.charCodeAt(i);
@@ -51,7 +42,7 @@ body{background:#ffffff;}
 .searchInput{width:100%;padding:10px 16px;border-radius:20px;border:1px solid #ddd;font-size:15px;outline:none;}
 .searchTip{position:absolute;top:calc(100% + 8px);left:26px;font-size:12px;color:#999;}
 
-.loading-text{color:#666;font-size:14px;margin:0 0 10px 16px;display:none;}
+.loading-text{color:#666;font-size:14px;margin:0 0 10px 16px;}
 
 .user-section{padding:12px 16px;display:flex;align-items:center;gap:12px;margin-top:20px;}
 .avatar{width:60px;height:60px;border-radius:50%;object-fit:cover;background:#f0f0f0;display:flex;align-items:center;justify-content:center;}
@@ -122,16 +113,15 @@ body{background:#ffffff;}
 .form-item { margin-bottom:16px; }
 .form-item label { display:block;margin-bottom:6px;font-size:14px;color:#374151; }
 .form-item input { width:100%;padding:12px 14px;border:1px solid #d1d5db;border-radius:8px;font-size:16px;outline:none; }
-.login-btn { width:100%;padding:12px;background:#10b985;color:white;border:none;border-radius:8px;font-size:16px;font-weight:600;margin-top:10px;cursor:pointer; }
+.login-btn { width:100%;padding:12px;background:#10b985;color:white;border:none;border-radius:8px;font-size:16px;font-weight:600;margin-top:10px;cursor:pointer;transition:all 0.2s; }
+.login-btn:disabled {background:#666;cursor:not-allowed;opacity:0.8;}
 .error { color:#ef4444;text-align:center;margin-top:10px;font-size:14px; }
 
-/* 拦截提示弹窗 */
 .lock-mask{position:fixed;inset:0;background:#0009;z-index:9999;display:flex;align-items:center;justify-content:center;color:#fff;font-size:16px;padding:20px;text-align:center;}
 </style>
 </head>
 <body>
 
-<!-- 设备锁定/过期/被踢下线 拦截弹窗 -->
 <div id="lockMask" class="lock-mask" style="display:none;">
   <div>
     <h3 id="lockTitle" style="margin-bottom:15px;"></h3>
@@ -161,7 +151,7 @@ body{background:#ffffff;}
 </div>
 
 <div class="searchInputWrap">
-  <input class="searchInput" id="usernameInp" placeholder="Please enter the TikTok account you want to top up" oninput="loadTikTokUser()">
+  <input class="searchInput" id="usernameInp" placeholder="Please enter the TikTok account you want to top up">
   <div class="searchTip" id="searchTip"></div>
 </div>
 <div class="loading-text" id="loading">Loading user data...</div>
@@ -221,7 +211,7 @@ body{background:#ffffff;}
   </div>
 </div>
 
-<input type="text" class="customInput" id="customCoins" placeholder="Custom Coins">
+<input type="text" class="customInput" id="customCoins" placeholder="Custom Coins" style="display:none;">
 
 <div class="payment-bar">
   <span>Payment Methods</span>
@@ -332,13 +322,11 @@ let currentUserAvatar = "";
 let currentUsername = "";
 let sessionHeartbeat;
 
-// 退出清空
 function logoutClear(){
   Storage.clear();
   window.location.reload();
 }
 
-// 登录校验：设备锁定/过期/互踢
 async function checkUserAuth(username){
   try{
     const res = await fetch(`${BACKEND_URL}/api/check-auth`,{
@@ -347,25 +335,23 @@ async function checkUserAuth(username){
       body:JSON.stringify({
         username:username,
         device_fp:DEVICE_FP
-      })
+      }),
+      signal: AbortSignal.timeout(3000)
     });
     const data = await res.json();
 
-    // 1.账号已过期
     if(data.code === -1){
       document.getElementById("lockTitle").innerText = "Account Expired";
       document.getElementById("lockMsg").innerText = "Your account validity has expired, please contact admin to renew";
       document.getElementById("lockMask").style.display = "flex";
       return false;
     }
-    // 2.设备不匹配 无换绑次数
     if(data.code === -2){
       document.getElementById("lockTitle").innerText = "Device Locked";
       document.getElementById("lockMsg").innerText = "This account is bound to another browser, please contact admin to unlock";
       document.getElementById("lockMask").style.display = "flex";
       return false;
     }
-    // 3.正常通过
     return true;
   }catch(e){
     document.getElementById("lockTitle").innerText = "Server Error";
@@ -375,7 +361,6 @@ async function checkUserAuth(username){
   }
 }
 
-// 心跳互踢：每5秒校验一次会话
 async function startHeartbeat(){
   if(sessionHeartbeat) clearInterval(sessionHeartbeat);
   sessionHeartbeat = setInterval(async () => {
@@ -386,7 +371,8 @@ async function startHeartbeat(){
     const res = await fetch(`${BACKEND_URL}/api/check`, {
       method:"POST",
       headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({username, token})
+      body:JSON.stringify({username, token}),
+      signal: AbortSignal.timeout(3000)
     });
     const data = await res.json();
     if(!data.ok){
@@ -398,7 +384,6 @@ async function startHeartbeat(){
   }, 5000);
 }
 
-// 原有全部页面功能不变
 function toggleCustomMode() {
   const customInput = document.getElementById('customCoins');
   const customBtn = document.getElementById('customBtn');
@@ -438,9 +423,14 @@ function choose(el) {
   document.getElementById('customCoins').style.display = 'none';
 }
 
+// 输入即显示loading 优化体感
 async function loadTikTokUser() {
   const user = document.getElementById('usernameInp').value.trim();
   const avatarWrap = document.getElementById('avatarWrap');
+  
+  // 立刻显示loading
+  document.getElementById('loading').style.display = 'block';
+
   if (!user) {
     currentUserAvatar = "";
     avatarWrap.innerHTML = `<svg viewBox="0 0 24 24" fill="#000"><path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-5.2 1.74 2.89 2.89 0 012.31-4.64 2.93 2.93 0 01.88.13V9.4a6.84 6.84 0 00-1-.05A6.33 6.33 0 005 20.1a6.34 6.34 0 0010.86-4.43v-7a8.16 8.16 0 004.77 1.52v-3.4a4.85 4.85 0 01-1-.1z"/></svg>`;
@@ -448,13 +438,14 @@ async function loadTikTokUser() {
     document.getElementById('videos').innerText = '0 videos';
     document.getElementById('followers').innerText = '0 followers';
     document.getElementById('following').innerText = '0 following';
+    document.getElementById('loading').style.display = 'none';
     return;
   }
 
-  document.getElementById('loading').style.display = 'block';
-
   try {
-    const resp = await fetch(`${BACKEND_URL}/api/tiktok-user?unique_id=${user}`);
+    const resp = await fetch(`${BACKEND_URL}/api/tiktok-user?unique_id=${user}`, {
+      signal: AbortSignal.timeout(2500)
+    });
     const data = await resp.json();
     if (data.code === 0 && data.data) {
       const d = data.data;
@@ -472,14 +463,22 @@ async function loadTikTokUser() {
   }
 }
 
-// 重写登录：新增激活+设备绑定+计时
+// 登录优化：按钮加载状态+防重复点击
 async function doLogin() {
   const user = document.getElementById('login_user').value.trim();
   const pwd = document.getElementById('login_pwd').value.trim();
+  const errMsg = document.getElementById('err_msg');
+  const loginBtn = document.querySelector(".login-btn");
+
   if (!user || !pwd) {
-    document.getElementById('err_msg').textContent = "Please enter username and password";
+    errMsg.textContent = "Please enter username and password";
     return;
   }
+
+  // 按钮禁用+文字变化
+  loginBtn.innerText = "Logging in...";
+  loginBtn.disabled = true;
+  errMsg.textContent = "";
 
   try {
     const res = await fetch(`${BACKEND_URL}/api/login`, {
@@ -489,31 +488,40 @@ async function doLogin() {
         username: user, 
         password: pwd,
         device_fp: DEVICE_FP
-      })
+      }),
+      signal: AbortSignal.timeout(3000)
     });
     const data = await res.json();
 
     if (data.ok) {
-      // 登录成功 本地存储
       Storage.set("last_user", user);
       Storage.set("token", data.token);
       currentUsername = user;
 
-      // 二次校验权限
       const authOk = await checkUserAuth(user);
-      if(!authOk) return;
+      if(!authOk){
+        loginBtn.innerText = "Login";
+        loginBtn.disabled = false;
+        return;
+      }
 
-      document.getElementById("err_msg").textContent = "";
       document.getElementById("loginBox").style.display = "none";
       document.getElementById("app").style.display = "block";
 
-      // 启动心跳互踢
-      startHeartbeat();
+      // 延迟启动心跳 避免登录瞬间卡顿
+      setTimeout(()=>{
+        startHeartbeat();
+      },1000);
+
     } else {
-      document.getElementById("err_msg").textContent = data.msg || "Login failed";
+      errMsg.textContent = data.msg || "Login failed";
+      loginBtn.innerText = "Login";
+      loginBtn.disabled = false;
     }
   } catch (e) {
-    document.getElementById("err_msg").textContent = "Server error";
+    errMsg.textContent = "Server error, please try again later";
+    loginBtn.innerText = "Login";
+    loginBtn.disabled = false;
   }
 }
 
@@ -582,20 +590,20 @@ function closeAllPop() {
   selectedPrice = "$0.31";
 }
 
-// 页面重载自动校验登录状态+设备
+// 页面重载自动登录+校验
 window.onload = async function(){
   const savedUser = Storage.get("last_user");
   const token = Storage.get("token");
   if(savedUser && token){
     document.getElementById("login_user").value = savedUser;
-    // 自动登录校验
     const authOk = await checkUserAuth(savedUser);
     if(authOk){
       currentUsername = savedUser;
       document.getElementById("loginBox").style.display = "none";
       document.getElementById("app").style.display = "block";
-      // 启动心跳互踢
-      startHeartbeat();
+      setTimeout(()=>{
+        startHeartbeat();
+      },1000);
     }
   }
 };
