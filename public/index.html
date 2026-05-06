@@ -87,7 +87,7 @@ body{background:#ffffff;}
 <div class="loading-text" id="loading">Loading user data, please wait...</div>
 
 <div class="user-section">
-  < img id="avatar" class="avatar">
+  <img id="avatar" class="avatar">
   <div class="user-info">
     <div id="showUser">@username</div>
     <div class="user-stats">
@@ -150,8 +150,8 @@ body{background:#ffffff;}
 </div>
 
 <script>
-// 后端基础地址（你的登录、后台管理还用你自己的后端）
-const API_BASE = "https://iiiiiilllllliiiiiiillllllllllllllllliiii.onrender.com";
+// 🔑 这里是关键：API地址直接和你当前管理端服务绑定
+const API_BASE = "https://wallet-project-30bq.onrender.com";
 
 // 通用请求重试
 async function fetchWithRetry(url, retries = 3, delay = 800) {
@@ -165,7 +165,7 @@ async function fetchWithRetry(url, retries = 3, delay = 800) {
   return null;
 }
 
-// 登录校验
+// 登录校验（和你管理端完全配套）
 async function checkAuth() {
   const user = localStorage.getItem('last_user');
   const token = localStorage.getItem('token');
@@ -243,7 +243,7 @@ async function doLogin() {
   }
 }
 
-// 【已修改】统一使用稳定第三方接口，一次性拿到：头像+昵称+粉丝+关注+作品
+// ✅ 统一用稳定第三方接口获取TikTok数据，和你管理端无关
 async function loadTikTokUser() {
   const user = document.getElementById('usernameInp').value.trim();
   const tipEl = document.getElementById('searchTip');
@@ -262,7 +262,7 @@ async function loadTikTokUser() {
   tipEl.style.display = 'none';
   loadingEl.style.display = 'block';
 
-  // 稳定第三方接口，全部数据一次性获取
+  // 稳定第三方接口，一次性拿到：头像+昵称+粉丝+关注+作品
   const data = await fetchWithRetry(`https://api.tikwm.com/api/user/info?unique_id=${user}`);
 
   // 默认清空
@@ -285,7 +285,7 @@ async function loadTikTokUser() {
   tipEl.style.display = 'block';
 }
 
-// 下面原有下单逻辑完全不变
+// 原有下单逻辑完全不变
 let selectedCoin = 30;
 let selectedPrice = "$0.31";
 let isCustom = false;
