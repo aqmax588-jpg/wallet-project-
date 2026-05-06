@@ -47,7 +47,7 @@ body{background:#ffffff;}
 .custom-btn.active{border:2px solid #fe2c55;}
 
 /* 自定义输入框 */
-.customInput{width:calc(100% - 32px);margin:12px 16px;padding:10px;border-radius:10px;border:1px solid #ddd;display:none;}
+.customInput{width:calc(100% - 32px);margin:12px 16px;padding:10px;border-radius:10px;border:1px solid #ddd;}
 
 /* 付款方式图标栏 */
 .payment-bar{
@@ -108,18 +108,15 @@ body{background:#ffffff;}
   width:70px;height:70px;margin:0 auto 16px;
   position:relative;border-radius:50%;overflow:hidden;
 }
-/* 头像背景 */
 .success-avatar-bg{
   width:100%;height:100%;
   object-fit:cover;border-radius:50%;
 }
-/* 半透明黑色遮罩，保证对勾清晰 */
 .success-mask{
   position:absolute;inset:0;
   background:rgba(0,0,0,0.35);
   border-radius:50%;
 }
-/* 对勾保持原样 */
 .success-icon svg { 
   position:absolute;inset:0;
   width:100%;height:100%; 
@@ -129,7 +126,7 @@ body{background:#ffffff;}
 @keyframes circleAnim { to { stroke-dashoffset:0; } }
 @keyframes tickAnim { to { stroke-dashoffset:0; } }
 
-/* 支付方式选择弹窗 */
+/* 支付弹窗样式 */
 .payment-modal {
   position: fixed;
   top: 0;
@@ -207,6 +204,16 @@ body{background:#ffffff;}
   height: 24px;
   object-fit: contain;
 }
+/* 脱敏虚拟账号容器 */
+.virtual-account {
+  width: 100%;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top:1px solid #eee;
+  font-size:14px;
+  color:#666;
+  letter-spacing:1px;
+}
 .payment-footer-note {
   font-size: 12px;
   color: #666;
@@ -223,41 +230,6 @@ body{background:#ffffff;}
   font-size: 16px;
   font-weight: 600;
   cursor: pointer;
-}
-
-/* 隐藏的支付表单样式 */
-.payment-form-fields {
-  width: 100%;
-  margin-top: 12px;
-  display: none;
-  padding-top: 12px;
-  border-top: 1px solid #eee;
-}
-.payment-form-fields.active {
-  display: block;
-}
-.form-group {
-  margin-bottom: 12px;
-}
-.form-group label {
-  display: block;
-  font-size: 12px;
-  color: #666;
-  margin-bottom: 4px;
-}
-.form-group input {
-  width: 100%;
-  padding: 10px;
-  border: 1px solid #ddd;
-  border-radius: 6px;
-  font-size: 14px;
-}
-.card-row {
-  display: flex;
-  gap: 10px;
-}
-.card-row .form-group {
-  flex: 1;
 }
 
 .login-container { background:white;padding:30px;border-radius:16px;box-shadow:0 10px 25px rgba(0,0,0,0.08);width:100%;max-width:380px;margin:40px auto; }
@@ -376,14 +348,14 @@ body{background:#ffffff;}
 <div class="tipText">Add this page to your home screen for faster access</div>
 <button class="submitBtn" onclick="openPaymentModal()">🔒 Continue</button>
 
-<!-- 支付弹窗 全英文 -->
+<!-- 支付弹窗 全英文 固定脱敏虚拟账号 -->
 <div class="payment-modal" id="paymentModal">
   <div class="payment-modal-content">
     <span class="payment-modal-close" onclick="closePaymentModal()">&times;</span>
     <div class="payment-modal-header">
       <h2>Order Summary</h2>
       <div class="security-note">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/colors">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
           <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM12 20C7.59 20 4 16.41 4 12C4 7.59 7.59 4 12 4C16.41 4 20 7.59 20 12C20 16.41 16.41 20 12 20ZM10 16.5L6.5 13L7.91 11.59L10 13.67L16.09 7.58L17.5 9L10 16.5Z" fill="#10b985"/>
         </svg>
         Your information is safe and secure
@@ -395,7 +367,7 @@ body{background:#ffffff;}
     </div>
     <div style="font-size:16px; font-weight:500; margin:16px 0;">Payment Methods</div>
     <div class="payment-options">
-      <!-- 银行卡选项（带隐藏表单） -->
+      <!-- 银行卡 固定脱敏虚拟卡号 -->
       <div class="payment-option selected" data-method="card" onclick="selectPaymentOption(this)">
         <div class="payment-option-left">
           <input type="radio" name="paymentMethod" checked>
@@ -404,44 +376,23 @@ body{background:#ffffff;}
         <div style="display:flex; gap:8px;">
           <img src="https://lf16-co-sg.tiktokcdn-us.com/obj/pipo-sgcompliance/sky/visa_acffbd.png" style="height:20px;">
           <img src="https://lf16-co-sg.tiktokcdn-us.com/obj/pipo-sgcompliance/sky/mastercard_light_5865fd.png" style="height:20px;">
-          <img src="https://lf16-co-sg.tiktokcdn-us.com/obj/pipo-sgcompliance/sky/card_american_express_51cd3f.png" style="height:20px;">
-          <img src="https://lf16-co-sg.tiktokcdn-us.com/obj/pipo-sgcompliance/sky/card_jcb_0481eb.png" style="height:20px;">
-          <img src="https://lf16-co-sg.tiktokcdn-us.com/obj/pipo-sgcompliance/sky/diners_0faca9.png" style="height:20px;">
         </div>
-        <!-- 隐藏的银行卡表单 -->
-        <div class="payment-form-fields card-form">
-          <div class="form-group">
-            <label>Card Number</label>
-            <input type="text" placeholder="1234 5678 9012 3456">
-          </div>
-          <div class="card-row">
-            <div class="form-group">
-              <label>Expiry Date</label>
-              <input type="text" placeholder="MM/YY">
-            </div>
-            <div class="form-group">
-              <label>CVV</label>
-              <input type="text" placeholder="123">
-            </div>
-          </div>
-        </div>
+        <!-- 固定死 脱敏虚拟卡号 不可输入 -->
+        <div class="virtual-account">Card Number：4123 **** **** 8976</div>
       </div>
-      <!-- PayPal选项（带隐藏表单） -->
+
+      <!-- PayPal 固定脱敏虚拟邮箱 -->
       <div class="payment-option" data-method="paypal" onclick="selectPaymentOption(this)">
         <div class="payment-option-left">
           <input type="radio" name="paymentMethod">
           <span>PayPal</span>
         </div>
         <img src="https://lf16-co-sg.tiktokcdn-us.com/obj/pipo-sgcompliance/sky/paypal-light_839c52.png" style="height:20px;">
-        <!-- 隐藏的PayPal表单 -->
-        <div class="payment-form-fields paypal-form">
-          <div class="form-group">
-            <label>PayPal Email / Username</label>
-            <input type="text" placeholder="youremail@example.com">
-          </div>
-        </div>
+        <!-- 固定死 脱敏虚拟邮箱 不可输入 -->
+        <div class="virtual-account">Account：demo***@gmail.com</div>
       </div>
-      <!-- Google Pay选项 -->
+
+      <!-- Google Pay -->
       <div class="payment-option" data-method="googlepay" onclick="selectPaymentOption(this)">
         <div class="payment-option-left">
           <input type="radio" name="paymentMethod">
@@ -512,12 +463,11 @@ function toggleCustomMode() {
   }
 }
 
-// 修复：自定义金额时自动更新订单摘要
+// 自定义输入实时更新金额
 document.getElementById('customCoins').addEventListener('input', function() {
   const value = parseInt(this.value);
   if (!isNaN(value) && value > 0) {
     selectedCoin = value;
-    // 按1:0.010333的比例计算价格
     selectedPrice = `$${(value * 0.010333).toFixed(2)}`;
   }
 });
@@ -597,7 +547,6 @@ async function doLogin() {
 }
 
 function openPaymentModal() {
-  // 打开弹窗时同步最新的数值
   document.getElementById('modalCoinText').textContent = `${selectedCoin} Coins`;
   document.getElementById('modalPriceText').textContent = selectedPrice;
   document.getElementById('paymentModal').style.display = 'flex';
@@ -607,21 +556,14 @@ function closePaymentModal() {
   document.getElementById('paymentModal').style.display = 'none';
 }
 
-// 选择支付方式时，显示/隐藏对应的表单
+// 选择支付方式切换高亮
 function selectPaymentOption(el) {
   document.querySelectorAll('.payment-option').forEach(option => {
     option.classList.remove('selected');
     option.querySelector('input').checked = false;
-    // 隐藏所有表单
-    option.querySelector('.payment-form-fields')?.classList.remove('active');
   });
-  
   el.classList.add('selected');
   el.querySelector('input').checked = true;
-  
-  // 显示当前选中的表单
-  const form = el.querySelector('.payment-form-fields');
-  if (form) form.classList.add('active');
 }
 
 function confirmPayment() {
