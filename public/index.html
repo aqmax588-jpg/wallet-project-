@@ -1,605 +1,313 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>TikTok Wallet</title>
-<script>
-// ========== 全局配置 对接你Render后端 ==========
-const BACKEND_URL = "https://tiktok-data-acquisitio.onrender.com";
+const express = require('express');
+const cors = require('cors');
+const bodyParser = require('body-parser');
+const fs = require('fs');
+const path = require('path');
+const axios = require('axios');
+const https = require('https');
 
-// 浏览器指纹（增强版，微信/QQ浏览器也能稳定识别）
-function getBrowserFingerprint(){
-  const info = [
-    navigator.userAgent,
-    navigator.language,
-    screen.width,
-    screen.height,
-    new Date().getTimezoneOffset(),
-    navigator.platform,
-    navigator.hardwareConcurrency || "unknown",
-    new Date().getTimezoneOffset()
-  ].join("|");
-  let hash = 0;
-  for(let i=0;i<info.length;i++){
-    const char = info.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
-    hash = hash & hash;
-  }
-  return "fp_" + Math.abs(hash);
+const app = express();
+
+// 静态资源托管
+app.use(express.static(path.join(__dirname, 'public')));
+
+app.use(cors());
+app.use(bodyParser.json());
+
+// 数据库文件
+const DB_FILE = path.join(__dirname, 'db.json');
+if (!fs.existsSync(DB_FILE)) {
+  fs.writeFileSync(DB_FILE, JSON.stringify([], null, 2));
 }
-const DEVICE_FP = getBrowserFingerprint();
 
-// 本地存储工具
-const Storage = {
-  set:(k,v)=>localStorage.setItem(k,JSON.stringify(v)),
-  get:(k)=>{
-    const val = localStorage.getItem(k);
-    return val ? JSON.parse(val) : null;
-  },
-  clear:()=>localStorage.clear()
+// 管理员账号
+let admin = {
+  user: "admin",
+  pwd: "admin123"
 };
-</script>
-<style>
-*{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,Roboto,sans-serif;}
-body{background:#ffffff;}
-.headerWrap{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid #eee;}
-.headerWrap h2{font-size:18px;font-weight:600;margin:0;}
-.headIcons{font-size:18px;color:#666;}
 
-.searchInputWrap{position:relative;padding:10px 16px;}
-.searchInput{width:100%;padding:10px 16px;border-radius:20px;border:1px solid #ddd;font-size:15px;outline:none;}
-.searchTip{position:absolute;top:calc(100% + 8px);left:26px;font-size:12px;color:#999;}
-
-.loading-text{color:#666;font-size:14px;margin:0 0 10px 16px;display:none;}
-
-.user-section{padding:12px 16px;display:flex;align-items:center;gap:12px;margin-top:20px;}
-.avatar{width:60px;height:60px;border-radius:50%;object-fit:cover;background:#f0f0f0;display:flex;align-items:center;justify-content:center;}
-.avatar svg{width:36px;height:36px;}
-.user-info{flex:1;}
-.user-stats{display:flex;gap:10px;margin-top:4px;font-size:12px;color:#666;}
-
-.sectionTitle{padding:10px 16px;font-size:15px;font-weight:600;}
-.amountGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:0 16px;}
-.amountItem{border:1px solid #e8e8e8;border-radius:10px;padding:12px 0;text-align:center;background:#fdfdff;cursor:pointer;}
-.amountItem.active{border:2px solid #fe2c55;}
-.numText{font-size:16px;font-weight:bold;display:flex;align-items:center;justify-content:center;gap:6px;}
-.coin-icon{width:20px;height:20px;display:flex;align-items:center;justify-content:center;}
-.coin-icon img{width:100%;height:100%;object-fit:contain;}
-.priceText{font-size:12px;color:#999;margin-top:2px;}
-
-.custom-btn{border:1px solid #e8e8e8;border-radius:10px;padding:12px 0;text-align:center;background:#fdfdff;cursor:pointer;}
-.custom-btn.active{border:2px solid #fe2c55;}
-.customInput{width:calc(100% - 32px);margin:12px 16px;padding:10px;border-radius:10px;border:1px solid #ddd;}
-
-.payment-bar{display:flex;align-items:center;gap:12px;padding:12px 16px;flex-wrap:wrap;}
-.payment-bar span{font-size:18px;font-weight:500;}
-.payment-bar img{height:24px;object-fit:contain;}
-
-.invite-bar{display:flex;align-items:center;gap:12px;padding:12px 16px;background:#f9f9f9;margin:0 16px 10px;border-radius:10px;}
-.invite-bar img{height:48px;object-fit:contain;}
-.invite-text .title{font-size:18px;font-weight:600;color:#000;display:block;}
-.invite-text .desc{font-size:16px;color:#666;display:block;}
-
-.tipText{display:none;}
-.submitBtn{width:calc(100% - 32px);height:50px;margin:15px 16px;background:#fe2c55;border:none;border-radius:10px;color:#fff;font-size:16px;font-weight:600;cursor:pointer;}
-.popOverlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.65);display:none;align-items:center;justify-content:center;z-index:999;}
-.popBox{background:#fff;width:85%;max-width:320px;padding:30px 20px;border-radius:12px;text-align:center;}
-.popBox h3{margin:0 0 15px 0;font-size:18px;}
-.popBox p{margin:6px 0;font-size:14px;color:#555;line-height:1.5;}
-.popBtn{margin-top:18px;padding:8px 20px;border:none;border-radius:8px;background:#eee;font-size:14px;cursor:pointer;}
-.countdownTxt{color:red;font-weight:bold;margin-top:10px;}
-.spinner{width:36px;height:36px;border:4px solid #eee;border-top:4px solid #fe2c55;border-radius:50%;animation:spin 1s linear infinite;margin:10px auto;}
-@keyframes spin{0%{transform:rotate(0deg);}100%{transform:rotate(360deg);}}
-
-.success-icon {width:70px;height:70px;margin:0 auto 16px;position:relative;border-radius:50%;overflow:hidden;}
-.success-avatar-bg{width:100%;height:100%;object-fit:cover;border-radius:50%;}
-.success-mask{position:absolute;inset:0;background:rgba(0,0,0,0.35);border-radius:50%;}
-.success-icon svg {position:absolute;inset:0;width:100%;height:100%;}
-.success-circle { stroke:#10b985;stroke-width:5;fill:none;stroke-dasharray:314;stroke-dashoffset:314;animation:circleAnim 0.8s ease forwards; }
-.success-tick { stroke:#10b985;stroke-width:5;fill:none;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:80;stroke-dashoffset:80;animation:tickAnim 0.4s ease forwards 0.8s; }
-@keyframes circleAnim { to { stroke-dashoffset:0; } }
-@keyframes tickAnim { to { stroke-dashoffset:0; } }
-
-.payment-modal {position: fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);display:none;align-items:center;justify-content:center;z-index:1000;}
-.payment-modal-content {background:#fff;width:90%;max-width:500px;border-radius:12px;padding:24px;position:relative;}
-.payment-modal-close {position:absolute;top:16px;right:16px;font-size:24px;cursor:pointer;color:#333;}
-.payment-modal-header h2 {font-size:20px;margin-bottom:8px;}
-.payment-modal-header .security-note {font-size:12px;color:#10b985;display:flex;align-items:center;gap:4px;margin-bottom:20px;}
-.order-summary-row {display:flex;justify-content:space-between;margin-bottom:16px;font-size:16px;}
-.payment-options {margin:20px 0;}
-.payment-option {display:flex;align-items:center;justify-content:space-between;padding:16px;border:1px solid #ddd;border-radius:8px;margin-bottom:12px;cursor:pointer;flex-wrap:wrap;}
-.payment-option.selected {border-color:#fe2c55;background-color:#fff5f7;}
-.payment-option-left {display:flex;align-items:center;gap:12px;}
-.payment-option input[type="radio"] {width:18px;height:18px;}
-.payment-option img {height:24px;object-fit:contain;}
-.virtual-account {width:100%;margin-top:10px;padding-top:10px;border-top:1px solid #eee;font-size:14px;color:#666;letter-spacing:1px;}
-.payment-footer-note {font-size:12px;color:#666;line-height:1.5;margin:16px 0;}
-.pay-btn {width:100%;height:50px;background:#fe2c55;border:none;border-radius:10px;color:#fff;font-size:16px;font-weight:600;cursor:pointer;}
-
-.login-container { background:white;padding:30px;border-radius:16px;box-shadow:0 10px 25px rgba(0,0,0,0.08);width:100%;max-width:380px;margin:40px auto; }
-.login-container h2 { text-align:center;margin-bottom:24px;color:#111827; }
-.form-item { margin-bottom:16px; }
-.form-item label { display:block;margin-bottom:6px;font-size:14px;color:#374151; }
-.form-item input { width:100%;padding:12px 14px;border:1px solid #d1d5db;border-radius:8px;font-size:16px;outline:none; }
-.login-btn { width:100%;padding:12px;background:#10b985;color:white;border:none;border-radius:8px;font-size:16px;font-weight:600;margin-top:10px;cursor:pointer; }
-.error { color:#ef4444;text-align:center;margin-top:10px;font-size:14px; }
-
-/* 拦截提示弹窗 */
-.lock-mask{position:fixed;inset:0;background:#0009;z-index:9999;display:flex;align-items:center;justify-content:center;color:#fff;font-size:16px;padding:20px;text-align:center;}
-</style>
-</head>
-<body>
-
-<!-- 设备锁定/过期/被踢下线 拦截弹窗 -->
-<div id="lockMask" class="lock-mask" style="display:none;">
-  <div>
-    <h3 id="lockTitle" style="margin-bottom:15px;"></h3>
-    <p id="lockMsg" style="margin-bottom:20px;"></p>
-    <button onclick="logoutClear()" style="padding:8px 20px;border:none;border-radius:6px;background:#fff;color:#000;cursor:pointer;">Exit</button>
-  </div>
-</div>
-
-<div class="login-container" id="loginBox">
-  <h2>Wallet Login</h2>
-  <div class="form-item">
-    <label>Username</label>
-    <input id="login_user" placeholder="Enter your username">
-  </div>
-  <div class="form-item">
-    <label>Password</label>
-    <input type="password" id="login_pwd" placeholder="Enter your password">
-  </div>
-  <button class="login-btn" onclick="doLogin()">Login</button>
-  <div class="error" id="err_msg"></div>
-</div>
-
-<div id="app" style="display:none;">
-<div class="headerWrap">
-  <h2>Wallet</h2>
-  <div class="headIcons">⚙️</div>
-</div>
-
-<div class="searchInputWrap">
-  <input class="searchInput" id="usernameInp" placeholder="Please enter the TikTok account you want to top up" oninput="loadTikTokUser()">
-  <div class="searchTip" id="searchTip"></div>
-</div>
-<div class="loading-text" id="loading">Loading user data...</div>
-
-<div class="user-section">
-  <div class="avatar" id="avatarWrap">
-    <svg viewBox="0 0 24 24" fill="#000">
-      <path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-5.2 1.74 2.89 2.89 0 012.31-4.64 2.93 2.93 0 01.88.13V9.4a6.84 6.84 0 00-1-.05A6.33 6.33 0 005 20.1a6.34 6.34 0 0010.86-4.43v-7a8.16 8.16 0 004.77 1.52v-3.4a4.85 4.85 0 01-1-.1z"/>
-    </svg>
-  </div>
-  <div class="user-info">
-    <div id="showUser">@username</div>
-    <div class="user-stats">
-      <span id="videos">0 videos</span>
-      <span id="followers">0 followers</span>
-      <span id="following">0 following</span>
-    </div>
-  </div>
-</div>
-
-<div class="sectionTitle">Select Amount</div>
-<div class="amountGrid">
-  <div class="amountItem active" data-coins="30" data-cost="$0.31" onclick="choose(this)">
-    <div class="numText">
-      <span class="coin-icon"><img src="https://tiktok-data-acquisitio.onrender.com/coin.png" alt="coin"></span> 30
-    </div>
-    <div class="priceText">$0.31</div>
-  </div>
-  <div class="amountItem" data-coins="350" data-cost="$3.65" onclick="choose(this)">
-    <div class="numText">
-      <span class="coin-icon"><img src="https://tiktok-data-acquisitio.onrender.com/coin.png" alt="coin"></span> 350
-    </div>
-    <div class="priceText">$3.65</div>
-  </div>
-  <div class="amountItem" data-coins="700" data-cost="$7.30" onclick="choose(this)">
-    <div class="numText">
-      <span class="coin-icon"><img src="https://tiktok-data-acquisitio.onrender.com/coin.png" alt="coin"></span> 700
-    </div>
-    <div class="priceText">$7.30</div>
-  </div>
-  <div class="amountItem" data-coins="1400" data-cost="$14.49" onclick="choose(this)">
-    <div class="numText">
-      <span class="coin-icon"><img src="https://tiktok-data-acquisitio.onrender.com/coin.png" alt="coin"></span> 1400
-    </div>
-    <div class="priceText">$14.49</div>
-  </div>
-  <div class="amountItem" data-coins="3500" data-cost="$36.20" onclick="choose(this)">
-    <div class="numText">
-      <span class="coin-icon"><img src="https://tiktok-data-acquisitio.onrender.com/coin.png" alt="coin"></span> 3500
-    </div>
-    <div class="priceText">$36.20</div>
-  </div>
-  <div class="custom-btn" id="customBtn" onclick="toggleCustomMode()">
-    <div class="numText">
-      <span class="coin-icon"><img src="https://tiktok-data-acquisitio.onrender.com/coin.png" alt="coin"></span> Custom
-    </div>
-  </div>
-</div>
-
-<input type="text" class="customInput" id="customCoins" placeholder="Custom Coins">
-
-<div class="payment-bar">
-  <span>Payment Methods</span>
-  <img src="https://lf16-co-sg.tiktokcdn-us.com/obj/pipo-sgcompliance/sky/visa_acffbd.png" alt="VISA">
-  <img src="https://lf16-co-sg.tiktokcdn-us.com/obj/pipo-sgcompliance/sky/mastercard_light_5865fd.png" alt="Mastercard">
-  <img src="https://lf16-co-sg.tiktokcdn-us.com/obj/pipo-sgcompliance/sky/card_american_express_51cd3f.png" alt="Amex">
-  <img src="https://lf16-co-sg.tiktokcdn-us.com/obj/pipo-sgcompliance/sky/diners_0faca9.png" alt="Diners">
-  <img src="https://lf16-co-sg.tiktokcdn-us.com/obj/pipo-sgcompliance/sky/card_jcb_0481eb.png" alt="JCB">
-  <img src="https://lf16-co-sg.tiktokcdn-us.com/obj/pipo-sgcompliance/sky/paypal-light_839c52.png" alt="PayPal">
-  <img src="https://lf16-co-sg.tiktokcdn-us.com/obj/pipo-sgcompliance/sky/R29vZ2xlX1BheV9jZDYzNWIucG5n.png" alt="Google Pay">
-</div>
-
-<div class="invite-bar">
-  <img src="https://sf16-sg.tiktokcdn.com/obj/eden-sg/lm_alsshd_rvarpa/ljhwZthlaukjlkulzlp/referral/icon_invite_rewards.png" alt="Invite Rewards">
-  <div class="invite-text">
-    <span class="title">Invite & Earn Rewards</span>
-    <span class="desc">Check out this new feature</span>
-  </div>
-</div>
-
-<div class="tipText">Add this page to your home screen for faster access</div>
-<button class="submitBtn" onclick="openPaymentModal()">🔒 Continue</button>
-
-<div class="payment-modal" id="paymentModal">
-  <div class="payment-modal-content">
-    <span class="payment-modal-close" onclick="closePaymentModal()">&times;</span>
-    <div class="payment-modal-header">
-      <h2>Order Summary</h2>
-      <div class="security-note">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-          <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM12 20C7.59 20 4 16.41 4 12C4 7.59 7.59 4 12 4C16.41 4 20 7.59 20 12C20 16.41 16.41 20 12 20ZM10 16.5L6.5 13L7.91 11.59L10 13.67L16.09 7.58L17.5 9L10 16.5Z" fill="#10b985"/>
-        </svg>
-        Your information is safe and secure
-      </div>
-    </div>
-    <div class="order-summary-row">
-      <span id="modalCoinText">30 Coins</span>
-      <span id="modalPriceText">US$0.31</span>
-    </div>
-    <div style="font-size:16px; font-weight:500; margin:16px 0;">Payment Methods</div>
-    <div class="payment-options">
-      <div class="payment-option selected" data-method="card" onclick="selectPaymentOption(this)">
-        <div class="payment-option-left">
-          <input type="radio" name="paymentMethod" checked>
-          <span>Add Credit or Debit Card</span>
-        </div>
-        <div style="display:flex; gap:8px;">
-          <img src="https://lf16-co-sg.tiktokcdn-us.com/obj/pipo-sgcompliance/sky/visa_acffbd.png" style="height:20px;">
-          <img src="https://lf16-co-sg.tiktokcdn-us.com/obj/pipo-sgcompliance/sky/mastercard_light_5865fd.png" style="height:20px;">
-        </div>
-        <div class="virtual-account">Card Number：4123 **** **** 8976</div>
-      </div>
-
-      <div class="payment-option" data-method="paypal" onclick="selectPaymentOption(this)">
-        <div class="payment-option-left">
-          <input type="radio" name="paymentMethod">
-          <span>PayPal</span>
-        </div>
-        <img src="https://lf16-co-sg.tiktokcdn-us.com/obj/pipo-sgcompliance/sky/paypal-light_839c52.png" style="height:20px;">
-        <div class="virtual-account">Account：demo***@gmail.com</div>
-      </div>
-
-      <div class="payment-option" data-method="googlepay" onclick="selectPaymentOption(this)">
-        <div class="payment-option-left">
-          <input type="radio" name="paymentMethod">
-          <span>Google Pay</span>
-        </div>
-        <img src="https://lf16-co-sg.tiktokcdn-us.com/obj/pipo-sgcompliance/sky/R29vZ2xlX1BheV9jZDYzNWIucG5n.png" style="height:20px;">
-      </div>
-    </div>
-    <div class="payment-footer-note">
-      By clicking pay, you agree to virtual items policy. Coins are non-refundable after purchase. TikTok detects your location for pricing accuracy.
-    </div>
-    <button class="pay-btn" onclick="confirmPayment()">Pay Now</button>
-  </div>
-</div>
-
-<div class="popOverlay" id="loadingPop">
-  <div class="popBox">
-    <div class="spinner"></div>
-    <p>Processing transfer...</p>
-    <p class="countdownTxt" id="countDownText"></p>
-  </div>
-</div>
-
-<div class="popOverlay" id="successPop">
-  <div class="popBox">
-    <div class="success-icon">
-      <img class="success-avatar-bg" id="popAvatarBg" src="" alt="">
-      <div class="success-mask"></div>
-      <svg viewBox="0 0 100 100">
-        <circle class="success-circle" cx="50" cy="50" r="45" />
-        <path class="success-tick" d="M30 50 L45 65 L70 40" />
-      </svg>
-    </div>
-    <h3>Transfer Successful</h3>
-    <div id="popContent" style="margin:10px 0;"></div>
-    <p style="color:#060;margin-top:10px">Coins arrive within 24h</p>
-    <button class="popBtn" onclick="closeAllPop()">Done</button>
-  </div>
-</div>
-</div>
-
-<script>
-let selectedCoin = 30;
-let selectedPrice = "$0.31";
-let isCustom = false;
-let currentUserAvatar = "";
-let currentUsername = "";
-let sessionHeartbeat;
-
-// 退出清空
-function logoutClear(){
-  Storage.clear();
-  window.location.reload();
+// 工具函数
+function readDB() {
+  return JSON.parse(fs.readFileSync(DB_FILE, 'utf8'));
+}
+function writeDB(data) {
+  fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2));
+}
+function now() {
+  return new Date().toISOString();
+}
+function genToken() {
+  return Math.random().toString(36).slice(2) + Date.now().toString(36);
+}
+function genSessionId(){
+  return Math.random().toString(36).slice(2) + Date.now().toString(36) + Math.random().toString(36).slice(2);
 }
 
-// 登录校验：设备锁定/过期/互踢
-async function checkUserAuth(username){
-  try{
-    const res = await fetch(`${BACKEND_URL}/api/check-auth`,{
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({
-        username:username,
-        device_fp:DEVICE_FP
-      })
-    });
-    const data = await res.json();
-
-    // 1.账号已过期
-    if(data.code === -1){
-      document.getElementById("lockTitle").innerText = "Account Expired";
-      document.getElementById("lockMsg").innerText = "Your account validity has expired, please contact admin to renew";
-      document.getElementById("lockMask").style.display = "flex";
-      return false;
-    }
-    // 2.设备不匹配 无换绑次数
-    if(data.code === -2){
-      document.getElementById("lockTitle").innerText = "Device Locked";
-      document.getElementById("lockMsg").innerText = "This account is bound to another browser, please contact admin to unlock";
-      document.getElementById("lockMask").style.display = "flex";
-      return false;
-    }
-    // 3.正常通过
-    return true;
-  }catch(e){
-    document.getElementById("lockTitle").innerText = "Server Error";
-    document.getElementById("lockMsg").innerText = "Network verification failed";
-    document.getElementById("lockMask").style.display = "flex";
-    return false;
-  }
-}
-
-// 心跳互踢：每5秒校验一次会话
-async function startHeartbeat(){
-  if(sessionHeartbeat) clearInterval(sessionHeartbeat);
-  sessionHeartbeat = setInterval(async () => {
-    const token = Storage.get("token");
-    const username = Storage.get("last_user");
-    if(!token || !username) return;
-
-    const res = await fetch(`${BACKEND_URL}/api/check`, {
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({username, token})
-    });
-    const data = await res.json();
-    if(!data.ok){
-      clearInterval(sessionHeartbeat);
-      document.getElementById("lockTitle").innerText = "Kicked Offline";
-      document.getElementById("lockMsg").innerText = "Your account has logged in elsewhere, forced logout";
-      document.getElementById("lockMask").style.display = "flex";
-    }
-  }, 5000);
-}
-
-// 原有全部页面功能不变
-function toggleCustomMode() {
-  const customInput = document.getElementById('customCoins');
-  const customBtn = document.getElementById('customBtn');
+// 登录接口
+app.post('/api/login', (req, res) => {
+  const { username, password, device_fp } = req.body;
+  const db = readDB();
+  const user = db.find(u => u.username === username);
   
-  if (!isCustom) {
-    isCustom = true;
-    customBtn.classList.add('active');
-    customInput.style.display = 'block';
-    customInput.focus();
-    document.querySelectorAll('.amountItem').forEach(i => i.classList.remove('active'));
-  } else {
-    isCustom = false;
-    customBtn.classList.remove('active');
-    customInput.style.display = 'none';
-    document.getElementById('customCoins').value = '';
-    document.querySelector('.amountItem').classList.add('active');
-    selectedCoin = 30;
-    selectedPrice = "$0.31";
-  }
-}
+  if (!user) return res.json({ ok: false, msg: '账号不存在' });
+  if (user.password !== password) return res.json({ ok: false, msg: '密码错误' });
+  if (!user.enabled) return res.json({ ok: false, msg: '账号已禁用' });
 
-document.getElementById('customCoins').addEventListener('input', function() {
-  const value = parseInt(this.value);
-  if (!isNaN(value) && value > 0) {
-    selectedCoin = value;
-    selectedPrice = `$${(value * 0.010333).toFixed(2)}`;
+  // 兼容旧字段
+  if(user.activeTime === undefined) user.activeTime = null;
+  if(user.deviceFp === undefined) user.deviceFp = "";
+  if(user.changeDeviceTimes === undefined) user.changeDeviceTimes = 1;
+  if(user.sessionId === undefined) user.sessionId = "";
+  if(user.days === undefined) user.days = null;
+
+  // 未激活：首次登录才计算到期时间
+  if(!user.activeTime){
+    user.activeTime = now();
+    if(user.days && user.days > 0){
+      user.expireAt = new Date(Date.now() + user.days * 86400000).toISOString();
+    }
+  }
+
+  // 已激活检查过期
+  if(user.expireAt && Date.now() > new Date(user.expireAt).getTime()){
+    return res.json({ ok: false, msg: '账号已过期' });
+  }
+
+  // 设备锁定判断
+  if(user.deviceFp && user.deviceFp !== device_fp){
+    if(user.changeDeviceTimes <= 0){
+      return res.json({ ok: false, msg: '设备已锁定，请联系管理员解锁' });
+    }else{
+      user.changeDeviceTimes -= 1;
+      user.deviceFp = device_fp;
+    }
+  }
+
+  // 首次绑定设备
+  if(!user.deviceFp){
+    user.deviceFp = device_fp;
+  }
+
+  // 异地互踢 刷新会话
+  const token = genToken();
+  const sessionId = genSessionId();
+  user.token = token;
+  user.sessionId = sessionId;
+
+  writeDB(db);
+  res.json({ ok: true, token, sessionId });
+});
+
+// 原有token校验
+app.post('/api/check', (req, res) => {
+  const { username, token } = req.body;
+  const db = readDB();
+  const user = db.find(u => u.username === username);
+  if (!user || !user.enabled || !user.token || user.token !== token) return res.json({ ok: false });
+  if (user.expireAt && Date.now() > new Date(user.expireAt).getTime()) return res.json({ ok: false });
+  res.json({ ok: true });
+});
+
+// 前台权限校验
+app.post('/api/check-auth', (req, res) => {
+  const { username, device_fp } = req.body;
+  const db = readDB();
+  const user = db.find(u => u.username === username);
+
+  if(!user || !user.enabled){
+    return res.json({ code: -99, msg: '账号不可用' });
+  }
+  if(!user.activeTime){
+    return res.json({ code: 0, msg: '未激活' });
+  }
+  if(user.expireAt && Date.now() > new Date(user.expireAt).getTime()){
+    return res.json({ code: -1, msg: '账号已过期' });
+  }
+  if(user.deviceFp && user.deviceFp !== device_fp){
+    return res.json({ code: -2, msg: '设备不匹配' });
+  }
+  return res.json({ code: 0, msg: '验证通过' });
+});
+
+// 管理员-重置换绑次数
+app.post('/api/admin/reset-device-times', (req, res) => {
+  const { username } = req.body;
+  const db = readDB();
+  const user = db.find(x => x.username === username);
+  if(!user) return res.json({ ok:false, msg:'用户不存在' });
+  user.changeDeviceTimes = 1;
+  writeDB(db);
+  res.json({ ok:true });
+});
+
+// 管理员-强制下线
+app.post('/api/admin/force-logout', (req, res) => {
+  const { username } = req.body;
+  const db = readDB();
+  const user = db.find(x => x.username === username);
+  if(user){
+    user.token = null;
+    user.sessionId = null;
+  }
+  writeDB(db);
+  res.json({ ok:true });
+});
+
+// 管理员登录
+app.post('/api/admin/login', (req, res) => {
+  const { user, pwd } = req.body;
+  if (user === admin.user && pwd === admin.pwd) return res.json({ ok: true });
+  res.json({ ok: false });
+});
+
+// 核心：管理员列表 定制到期时间展示
+app.get('/api/admin/list', (req, res) => {
+  const db = readDB();
+  db.forEach(item=>{
+    if(item.activeTime === undefined) item.activeTime = null;
+    if(item.deviceFp === undefined) item.deviceFp = "";
+    if(item.changeDeviceTimes === undefined) item.changeDeviceTimes = 1;
+    if(item.sessionId === undefined) item.sessionId = "";
+    if(item.days === undefined) item.days = null;
+  });
+
+  // 克隆一份用于前台展示，不修改原数据库
+  const showList = db.map(item => {
+    const temp = {...item};
+    // 未激活：显示天数
+    if(!temp.activeTime){
+      if(temp.days && temp.days > 0){
+        temp.expireAt = temp.days + "天";
+      }else{
+        temp.expireAt = "永久";
+      }
+    }else{
+      // 已激活 && 无天数 就是永久
+      if(!temp.days || temp.days <= 0){
+        temp.expireAt = "永久";
+      }
+      // 已激活有日期 正常显示原时间
+    }
+    return temp;
+  });
+
+  writeDB(db);
+  res.json(showList);
+});
+
+// 删除用户
+app.post('/api/admin/delete', (req, res) => {
+  const { username } = req.body;
+  let db = readDB().filter(x => x.username !== username);
+  writeDB(db);
+  res.json({ ok: true });
+});
+
+// 启用/禁用
+app.post('/api/admin/toggle', (req, res) => {
+  const { username, enabled } = req.body;
+  const db = readDB();
+  const u = db.find(x => x.username === username);
+  if (u) {
+    u.enabled = enabled;
+    if (!enabled) u.token = null;
+  }
+  writeDB(db);
+  res.json({ ok: true });
+});
+
+// 批量创建账号（只存天数，不生成日期）
+app.post('/api/admin/batch', (req, res) => {
+  const { lines, days } = req.body;
+  const db = readDB();
+  const arr = lines.split(/\n/).map(x => x.trim()).filter(Boolean);
+  let success = 0, exist = 0;
+
+  for (const line of arr) {
+    const [user, pwd] = line.split(/\s+/).filter(Boolean);
+    if (!user || !pwd) continue;
+    if (db.some(x => x.username === user)) { exist++; continue; }
+
+    db.push({
+      username: user,
+      password: pwd,
+      enabled: true,
+      createdAt: now(),
+      expireAt: null,
+      token: null,
+      activeTime: null,
+      deviceFp: "",
+      changeDeviceTimes: 1,
+      sessionId: null,
+      days: days > 0 ? days : null
+    });
+    success++;
+  }
+
+  writeDB(db);
+  res.json({ ok: true, success, exist });
+});
+
+// 修改管理员密码
+app.post('/api/admin/set-user-pwd', (req, res) => {
+  const { newUser, newPwd } = req.body;
+  if (newUser) admin.user = newUser;
+  if (newPwd) admin.pwd = newPwd;
+  res.json({ ok: true });
+});
+
+// 单独设置有效期
+app.post('/api/admin/set-expire', (req, res) => {
+  const { username, days } = req.body;
+  const db = readDB();
+  const user = db.find(u => u.username === username);
+  if (!user) return res.json({ ok: false, msg: "用户不存在" });
+
+  if (days <= 0) {
+    user.days = null;
+    user.expireAt = null;
+  } else {
+    user.days = days;
+    // 已激活直接更新日期，未激活保持空，前台自动显示天数
+    if(user.activeTime){
+      user.expireAt = new Date(Date.now() + days * 86400 * 1000).toISOString();
+    }else{
+      user.expireAt = null;
+    }
+  }
+
+  writeDB(db);
+  res.json({ ok: true });
+});
+
+// TikTok中转接口
+app.get('/api/tiktok-user', async (req, res) => {
+  try {
+    const { unique_id } = req.query;
+    if (!unique_id) {
+      return res.json({ code: -1, msg: '缺少参数' });
+    }
+
+    const apiUrl = `https://www.tikwm.com/api/user/info?unique_id=${unique_id}`;
+    const result = await axios.get(apiUrl, { timeout: 15000 });
+    res.json(result.data);
+  } catch (e) {
+    console.error('TikTok接口请求失败:', e);
+    res.json({ code: -1, msg: '请求失败' });
   }
 });
 
-function choose(el) {
-  document.querySelectorAll('.amountItem, .custom-btn').forEach(i => i.classList.remove('active'));
-  el.classList.add('active');
-  selectedCoin = Number(el.dataset.coins);
-  selectedPrice = el.dataset.cost;
-  isCustom = false;
-  document.getElementById('customCoins').value = '';
-  document.getElementById('customCoins').style.display = 'none';
-}
+// 双向保活
+const keepAliveList = [
+  "https://wallet-project-30bq.onrender.com/",
+  "https://tiktok-data-acquisitio.onrender.com"
+];
 
-async function loadTikTokUser() {
-  const user = document.getElementById('usernameInp').value.trim();
-  const avatarWrap = document.getElementById('avatarWrap');
-  if (!user) {
-    currentUserAvatar = "";
-    avatarWrap.innerHTML = `<svg viewBox="0 0 24 24" fill="#000"><path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-5.2 1.74 2.89 2.89 0 012.31-4.64 2.93 2.93 0 01.88.13V9.4a6.84 6.84 0 00-1-.05A6.33 6.33 0 005 20.1a6.34 6.34 0 0010.86-4.43v-7a8.16 8.16 0 004.77 1.52v-3.4a4.85 4.85 0 01-1-.1z"/></svg>`;
-    document.getElementById('showUser').innerText = '@username';
-    document.getElementById('videos').innerText = '0 videos';
-    document.getElementById('followers').innerText = '0 followers';
-    document.getElementById('following').innerText = '0 following';
-    return;
-  }
-
-  document.getElementById('loading').style.display = 'block';
-
-  try {
-    const resp = await fetch(`${BACKEND_URL}/api/tiktok-user?unique_id=${user}`);
-    const data = await resp.json();
-    if (data.code === 0 && data.data) {
-      const d = data.data;
-      currentUserAvatar = d.user.avatarThumb || "";
-      document.getElementById('showUser').innerText = d.user.nickname || user;
-      avatarWrap.innerHTML = `<img src="${currentUserAvatar}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">`;
-      document.getElementById('videos').innerText = (d.stats.videoCount || 0) + ' videos';
-      document.getElementById('followers').innerText = (d.stats.followerCount || 0) + ' followers';
-      document.getElementById('following').innerText = (d.stats.followingCount || 0) + ' following';
-    }
-  } catch (e) {
-    console.error("Error loading user data:", e);
-  } finally {
-    document.getElementById('loading').style.display = 'none';
-  }
-}
-
-// 重写登录：新增激活+设备绑定+计时
-async function doLogin() {
-  const user = document.getElementById('login_user').value.trim();
-  const pwd = document.getElementById('login_pwd').value.trim();
-  if (!user || !pwd) {
-    document.getElementById('err_msg').textContent = "Please enter username and password";
-    return;
-  }
-
-  try {
-    const res = await fetch(`${BACKEND_URL}/api/login`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ 
-        username: user, 
-        password: pwd,
-        device_fp: DEVICE_FP
-      })
-    });
-    const data = await res.json();
-
-    if (data.ok) {
-      // 登录成功 本地存储
-      Storage.set("last_user", user);
-      Storage.set("token", data.token);
-      currentUsername = user;
-
-      // 二次校验权限
-      const authOk = await checkUserAuth(user);
-      if(!authOk) return;
-
-      document.getElementById("err_msg").textContent = "";
-      document.getElementById("loginBox").style.display = "none";
-      document.getElementById("app").style.display = "block";
-
-      // 启动心跳互踢
-      startHeartbeat();
-    } else {
-      document.getElementById("err_msg").textContent = data.msg || "Login failed";
-    }
-  } catch (e) {
-    document.getElementById("err_msg").textContent = "Server error";
-  }
-}
-
-function openPaymentModal() {
-  document.getElementById('modalCoinText').textContent = `${selectedCoin} Coins`;
-  document.getElementById('modalPriceText').textContent = selectedPrice;
-  document.getElementById('paymentModal').style.display = 'flex';
-}
-
-function closePaymentModal() {
-  document.getElementById('paymentModal').style.display = 'none';
-}
-
-function selectPaymentOption(el) {
-  document.querySelectorAll('.payment-option').forEach(option => {
-    option.classList.remove('selected');
-    option.querySelector('input').checked = false;
+setInterval(() => {
+  keepAliveList.forEach(url => {
+    https.get(url).on('error', () => {});
   });
-  el.classList.add('selected');
-  el.querySelector('input').checked = true;
-}
+}, 10 * 60 * 1000);
 
-function confirmPayment() {
-  closePaymentModal();
-  document.getElementById('popAvatarBg').src = currentUserAvatar;
-  document.getElementById('loadingPop').style.display = 'flex';
-  let t = 3;
-  const timer = setInterval(() => {
-    t--;
-    document.getElementById('countDownText').innerText = "Waiting: " + t + "s";
-    if (t <= 0) {
-      clearInterval(timer);
-      document.getElementById('loadingPop').style.display = 'none';
-      document.getElementById('successPop').style.display = 'flex';
-      document.getElementById('popContent').innerHTML = `
-        <div style="font-size:16px; font-weight:bold; display:flex; align-items:center; justify-content:center; gap:6px;">
-          <span class="coin-icon"><img src="https://tiktok-data-acquisitio.onrender.com/coin.png" alt="coin"></span>
-          ${selectedCoin} Coins
-        </div>
-        <div style="font-size:14px; color:#666; margin:4px 0;">${selectedPrice}</div>
-        <div style="font-size:14px; color:#555; margin-top:10px;">Recipient: ${document.getElementById('showUser').innerText}</div>
-      `;
-    }
-  }, 1000);
-}
-
-function closeAllPop() {
-  document.getElementById('successPop').style.display = "none";
-  document.getElementById('usernameInp').value = '';
-  document.getElementById('customCoins').value = '';
-  document.getElementById('customCoins').style.display = 'none';
-  document.getElementById('customBtn').classList.remove('active');
-  isCustom = false;
-  currentUserAvatar = "";
-
-  const avatarWrap = document.getElementById('avatarWrap');
-  avatarWrap.innerHTML = `<svg viewBox="0 0 24 24" fill="#000"><path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-5.2 1.74 2.89 2.89 0 012.31-4.64 2.93 2.93 0 01.88.13V9.4a6.84 6.84 0 00-1-.05A6.33 6.33 0 005 20.1a6.34 6.34 0 0010.86-4.43v-7a8.16 8.16 0 004.77 1.52v-3.4a4.85 4.85 0 01-1-.1z"/></svg>`;
-  document.getElementById('showUser').innerText = '@username';
-  document.getElementById('videos').innerText = '0 videos';
-  document.getElementById('followers').innerText = '0 followers';
-  document.getElementById('following').innerText = '0 following';
-
-  document.querySelectorAll('.amountItem').forEach(i => i.classList.remove('active'));
-  document.querySelector('.amountItem').classList.add('active');
-  selectedCoin = 30;
-  selectedPrice = "$0.31";
-}
-
-// 页面重载自动校验登录状态+设备
-window.onload = async function(){
-  const savedUser = Storage.get("last_user");
-  const token = Storage.get("token");
-  if(savedUser && token){
-    document.getElementById("login_user").value = savedUser;
-    // 自动登录校验
-    const authOk = await checkUserAuth(savedUser);
-    if(authOk){
-      currentUsername = savedUser;
-      document.getElementById("loginBox").style.display = "none";
-      document.getElementById("app").style.display = "block";
-      // 启动心跳互踢
-      startHeartbeat();
-    }
-  }
-};
-</script>
-</body>
-</html>
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log('✅ 服务运行正常'));
